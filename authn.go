@@ -6,6 +6,12 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 )
 
+// Performs a user login with the given `username` and `password` using the client credentials and returns the
+// resulting JWT.
+func (c *Client) Login(ctx context.Context, username, password string) (*gocloak.JWT, error) {
+	return c.inner.Login(ctx, c.clientID, c.clientSecret, c.realm, username, password)
+}
+
 // Introspects the given `token` and returns the introspection result.
 func (c *Client) Introspect(
 	ctx context.Context,
