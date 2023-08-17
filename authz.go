@@ -14,6 +14,7 @@ var (
 	includeResourceName = true
 )
 
+// Checks whether the given `token` can is granted the given `permissions`.
 func (c *Client) CheckAccess(ctx context.Context, rpt *string, permissions ...string) error {
 	if err := c.RefreshIfExpired(ctx); err != nil {
 		return err
