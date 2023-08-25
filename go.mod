@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Nerzal/gocloak/v13 v13.8.0
 	github.com/eko/gocache/lib/v4 v4.1.4
+	github.com/rs/zerolog v1.30.0
 )
 
 require (
@@ -14,6 +15,8 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

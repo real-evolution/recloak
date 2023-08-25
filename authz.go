@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Nerzal/gocloak/v13"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -15,10 +16,19 @@ var (
 )
 
 // Checks whether the given `token` can is granted the given `permissions`.
-func (c *Client) CheckAccess(ctx context.Context, rpt *string, permissions ...string) error {
+func (c *Client) CheckAccess(
+	ctx context.Context,
+	rpt *string,
+	permissions ...string,
+) error {
 	if err := c.RefreshIfExpired(ctx); err != nil {
 		return err
 	}
+
+	log.Debug().
+		Str("clientId", c.clientID).
+		Strs("permissions", permissions).
+		Msg("checking access")
 
 	result, err := c.inner.GetRequestingPartyPermissionDecision(
 		ctx,
@@ -36,7 +46,9 @@ func (c *Client) CheckAccess(ctx context.Context, rpt *string, permissions ...st
 	}
 
 	if !*result.Result {
-		panic("invalid server response")
+		log.Panic().
+			Str("clientId", c.clientID).
+			Msg("invalid server response (got false)")
 	}
 
 	return nil

@@ -4,11 +4,15 @@ import (
 	"context"
 
 	"github.com/Nerzal/gocloak/v13"
+	"github.com/rs/zerolog/log"
 )
 
 // Performs a user login with the given `username` and `password` using the client credentials and returns the
 // resulting JWT.
-func (c *Client) Login(ctx context.Context, username, password string) (*gocloak.JWT, error) {
+func (c *Client) Login(
+	ctx context.Context,
+	username, password string,
+) (*gocloak.JWT, error) {
 	return c.inner.Login(ctx, c.clientID, c.clientSecret, c.realm, username, password)
 }
 
@@ -35,11 +39,26 @@ func (c *Client) Introspect(
 //     exist (first time) or is expired.
 func (c *Client) Refresh(ctx context.Context, force bool) error {
 	if c.token != nil {
-		if !force && !isTimestampExpired(int64(c.token.ExpiresIn)) {
-			return nil
+		if !force {
+			if !isTimestampExpired(int64(c.token.ExpiresIn)) {
+				log.Debug().
+					Str("clientId", c.clientID).
+					Msg("access token is not expired, skipping refresh")
+
+				return nil
+			} else {
+				log.Debug().
+					Str("clientId", c.clientID).
+					Msg("access token is expired, refreshing using refresh token")
+			}
 		}
 
 		if !isTimestampExpired(int64(c.token.RefreshExpiresIn)) {
+			log.Debug().
+				Str("clientId", c.clientID).
+				Bool("force", force).
+				Msg("refrshing access token")
+
 			token, err := c.inner.RefreshToken(
 				ctx,
 				c.token.RefreshToken,
@@ -54,7 +73,16 @@ func (c *Client) Refresh(ctx context.Context, force bool) error {
 			c.token = token
 			return err
 		}
+
+		log.Debug().
+			Str("clientId", c.clientID).
+			Bool("force", force).
+			Msg("refresh token is expired, logging in")
 	}
+
+	log.Info().
+		Str("clientId", c.clientID).
+		Msg("logging in to keycloak to acquire a new token pair")
 
 	token, err := c.inner.LoginClient(ctx, c.clientID, c.clientSecret, c.realm)
 	if err != nil {
