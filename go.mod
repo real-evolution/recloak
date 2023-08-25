@@ -6,6 +6,7 @@ require (
 	github.com/Nerzal/gocloak/v13 v13.8.0
 	github.com/eko/gocache/lib/v4 v4.1.4
 	github.com/rs/zerolog v1.30.0
+	google.golang.org/grpc v1.31.0
 )
 
 require (
@@ -28,5 +29,7 @@ require (
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
+	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
