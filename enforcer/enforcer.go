@@ -44,8 +44,11 @@ func (e *RecloakPolicyEnforcer) CheckAccess(
 ) error {
 	perms, err := e.resMap.GetPermissions(permFactories...)
 	if err != nil {
-		log.Err(err).
+		log.Warn().
+			Err(err).
 			Msg("could not generate permission strings, check your map definitions")
+
+		return err
 	}
 
 	return e.client.CheckAccess(ctx, token, perms...)
