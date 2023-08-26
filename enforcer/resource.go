@@ -25,7 +25,7 @@ type Resource struct {
 // Creates a new resource with the given `key`.
 func NewResource(name ResourceName, path string, actions ...Action) *Resource {
 	if strings.Count(string(name), "#") > 0 {
-		log.Fatal().
+		log.Panic().
 			Str("name", string(name)).
 			Str("path", path).
 			Msg("resource names cannot contain '#'")
