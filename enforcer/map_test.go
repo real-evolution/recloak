@@ -1,47 +1,93 @@
 package enforcer
 
 import (
-	"log"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestNewFromJSON(t *testing.T) {
 	const JSON = `
-	[
-		{
-			"name": "first-resource",
-			"path": "/resource/first",
-			"methods": [
-				{
-					"method":"GET",
-					"scopes": ["a", "b", "c"]
-				}
-			]
-		},
-		{
-			"name": "secondResoucre",
-			"path": "app.resource.SecondResouce",
-			"methods": [
-				{
-					"method": "ActionHandler",
-					"scopes": ["Admin", "Verifier"]
-				}
-			]
-		}
-	]
+	{
+		"resources": [
+			{
+				"name": "first-resource",
+				"path": "/resource/first",
+				"actions": [
+					{
+						"method":"GET",
+						"scopes": ["a", "b", "c"]
+					}
+				]
+			},
+			{
+				"name": "secondResoucre",
+				"path": "app.resource.SecondResouce",
+				"actions": [
+					{
+						"method": "ActionHandler",
+						"scopes": ["Admin", "Verifier"]
+					}
+				]
+			}
+		]
+	}
 	`
 
-	resMap := NewResourceMapFromJSON(JSON)
+	resMap := ResourceMap{}
+	err := json.Unmarshal([]byte(JSON), &resMap)
+	require.Nil(t, err)
 
-	for k, res := range resMap.byName {
-		log.Printf("byName (%v): %v", k, res)
+	firstRes := resMap.GetResourceByName("first-resource")
+	require.NotNil(t, firstRes)
+	require.Equal(t, ResourceName("first-resource"), firstRes.Name)
+	require.Equal(t, "/resource/first", firstRes.Path)
+	perm, ok := firstRes.GetPermission("GET")
+	require.True(t, ok)
+	require.Equal(t, "first-resource#a,b,c", perm)
 
-		for k, action := range res.Actions {
-			log.Printf("action (%v): %v", k, action)
-		}
-	}
+	seconRes := resMap.GetResourceByName("secondResoucre")
+	require.NotNil(t, seconRes)
+	require.Equal(t, ResourceName("secondResoucre"), seconRes.Name)
+	require.Equal(t, "app.resource.SecondResouce", seconRes.Path)
+	perm, ok = seconRes.GetPermission("ActionHandler")
+	require.True(t, ok)
+	require.Equal(t, "secondResoucre#Admin,Verifier", perm)
+
+	thirdRes := resMap.GetResourceByName("third-resource")
+	require.Nil(t, thirdRes)
+}
+
+func TestNewFromYAML(t *testing.T) {
+	const YAML = `
+---
+resources:
+- name: first-resource
+  path: "/resource/first"
+  actions:
+  - method: GET
+    scopes:
+    - a
+    - b
+    - c
+- name: secondResoucre
+  path: app.resource.SecondResouce
+  actions:
+  - method: ActionHandler
+    scopes:
+    - Admin
+    - Verifier
+`
+
+	resMap := ResourceMap{}
+	err := yaml.Unmarshal([]byte(YAML), &resMap)
+	require.Nil(t, err)
+
+	// for r, res := range resMap.byName {
+	// 	log.Panic().Msgf("r=%v: %#v", r, res)
+	// }
 
 	firstRes := resMap.GetResourceByName("first-resource")
 	require.NotNil(t, firstRes)
