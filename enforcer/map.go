@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -127,6 +128,20 @@ func (rm *ResourceMap) UnmarshalJSON(data []byte) error {
 	}{}
 
 	if err := json.Unmarshal(data, &model); err != nil {
+		return err
+	}
+
+	*rm = *NewResourceMap(model.Resources...)
+
+	return nil
+}
+
+func (rm *ResourceMap) UnmarshalYAML(value *yaml.Node) error {
+	model := struct {
+		Resources []*Resource `yaml:"resources,flow"`
+	}{}
+
+	if err := value.Decode(&model); err != nil {
 		return err
 	}
 
