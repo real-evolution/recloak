@@ -87,16 +87,16 @@ func (rm *ResourceMap) getPermissionOfAction(
 	resSelector func(*ResourceMap) *Resource,
 	action ActionMethod,
 ) (string, error) {
-	if res := resSelector(rm); res == nil {
+	if res := resSelector(rm); res != nil {
 		perm, ok := res.GetPermission(action)
 
 		if ok {
 			return perm, nil
 		} else {
-			return "", ErrUndefinedResource
+			return "", ErrorUndefinedAction
 		}
 	} else {
-		return "", ErrorUndefinedAction
+		return "", ErrUndefinedResource
 	}
 }
 
