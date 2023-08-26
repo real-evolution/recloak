@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -18,9 +19,9 @@ type (
 
 // Resource is a resource that can be accessed using a set of actions.
 type Resource struct {
-	Name            ResourceName            `json:"name"`
-	Path            string                  `json:"path"`
-	Actions         map[ActionMethod]Action `json:"methods"`
+	Name            ResourceName
+	Path            string
+	Actions         map[ActionMethod]Action
 	actionPermCache map[ActionMethod]string
 }
 
@@ -88,10 +89,26 @@ func (r *Resource) UnmarshalJSON(data []byte) error {
 	model := struct {
 		Name    ResourceName `json:"name"`
 		Path    string       `json:"path"`
-		Actions []Action     `json:"methods"`
+		Actions []Action     `json:"actions"`
 	}{}
 
 	if err := json.Unmarshal(data, &model); err != nil {
+		return err
+	}
+
+	*r = *NewResource(model.Name, model.Path, model.Actions...)
+
+	return nil
+}
+
+func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
+	model := struct {
+		Name    ResourceName `yaml:"name"`
+		Path    string       `yaml:"path"`
+		Actions []Action     `yaml:"actions,flow"`
+	}{}
+
+	if err := value.Decode(&model); err != nil {
 		return err
 	}
 
