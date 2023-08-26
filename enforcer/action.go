@@ -5,8 +5,8 @@ import "strings"
 // Action is an action that can be performed on a resource that is protected
 // by a set of scopes.
 type Action struct {
-	Method ActionMethod `json:"method"`
-	Scopes []string     `json:"scopes"`
+	Method ActionMethod `json:"method" yaml:"method"`
+	Scopes []string     `json:"scopes" yaml:"scopes"`
 }
 
 // Creates a new action with the given `method` and `scopes`.
