@@ -36,15 +36,6 @@ func NewResourceMap(resources ...*Resource) *ResourceMap {
 	return resMap
 }
 
-// Creates a new resource map from a JSON string.
-func NewResourceMapFromJSON(jsonStr string) ResourceMap {
-	resources := make([]*Resource, 0)
-
-	json.Unmarshal([]byte(jsonStr), &resources)
-
-	return NewResourceMap(resources...)
-}
-
 // Adds a resource to the map.
 func (rm *ResourceMap) AddResource(resource *Resource) {
 	if _, ok := rm.byName[resource.Name]; ok {
@@ -128,4 +119,18 @@ func ByPath(path string, action ActionMethod) PermissionFactory {
 			action,
 		)
 	}
+}
+
+func (rm *ResourceMap) UnmarshalJSON(data []byte) error {
+	model := struct {
+		Resources []*Resource `json:"resources"`
+	}{}
+
+	if err := json.Unmarshal(data, &model); err != nil {
+		return err
+	}
+
+	*rm = *NewResourceMap(model.Resources...)
+
+	return nil
 }
