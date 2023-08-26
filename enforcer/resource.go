@@ -1,6 +1,8 @@
 package enforcer
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -31,19 +33,16 @@ func NewResource(name ResourceName, path string, actions ...Action) *Resource {
 			Msg("resource names cannot contain '#'")
 	}
 
-	actionsMap := make(map[ActionMethod]Action)
-	actionPermCache := make(map[ActionMethod]string)
-
+	actionMap := make(map[ActionMethod]Action)
 	for _, action := range actions {
-		actionPermCache[action.Method] = action.getScopesStr()
-		actionsMap[action.Method] = action
+		actionMap[action.Method] = action
 	}
 
 	return &Resource{
 		Name:            name,
 		Path:            path,
-		Actions:         actionsMap,
-		actionPermCache: actionPermCache,
+		Actions:         actionMap,
+		actionPermCache: make(map[ActionMethod]string),
 	}
 }
 
@@ -51,27 +50,52 @@ func NewResource(name ResourceName, path string, actions ...Action) *Resource {
 func (r *Resource) AddAction(method ActionMethod, scopes ...string) {
 	action := NewAction(method, scopes...)
 
-	r.actionPermCache[action.Method] = action.getScopesStr()
 	r.Actions[action.Method] = action
 }
 
 // Checks whether the resource has an action with the given `key`.
-	_, ok := r.Actions[key]
 func (r *Resource) HasAction(method ActionMethod) bool {
+	_, ok := r.Actions[method]
 
 	return ok
 }
 
 // Gets the action with the given `key` from the resource.
-	action, ok := r.Actions[key]
 func (r *Resource) GetAction(method ActionMethod) (Action, bool) {
+	action, ok := r.Actions[method]
 
 	return action, ok
 }
 
 // Gets the permission for the action with the given `key` from the resource.
-	perm, ok := r.actionPermCache[action]
 func (r *Resource) GetPermission(method ActionMethod) (string, bool) {
+	perm, isCached := r.actionPermCache[method]
 
-	return perm, ok
+	if !isCached {
+		if action, hasAction := r.Actions[method]; hasAction {
+			scopesStr := action.getScopesStr()
+			permStr := fmt.Sprintf("%s#%s", r.Name, scopesStr)
+
+			r.actionPermCache[method] = permStr
+			return permStr, true
+		}
+	}
+
+	return perm, isCached
+}
+
+func (r *Resource) UnmarshalJSON(data []byte) error {
+	model := struct {
+		Name    ResourceName `json:"name"`
+		Path    string       `json:"path"`
+		Actions []Action     `json:"methods"`
+	}{}
+
+	if err := json.Unmarshal(data, &model); err != nil {
+		return err
+	}
+
+	*r = *NewResource(model.Name, model.Path, model.Actions...)
+
+	return nil
 }
