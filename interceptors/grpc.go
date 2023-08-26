@@ -74,6 +74,7 @@ func (i *AuthInterceptor) authorize(
 
 	if err != nil {
 		log.Warn().
+			Err(err).
 			Str("path", path).
 			Str("action", string(action)).
 			Msg("access to resource denied")
