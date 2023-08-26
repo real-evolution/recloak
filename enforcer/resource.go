@@ -23,7 +23,7 @@ type Resource struct {
 }
 
 // Creates a new resource with the given `key`.
-func NewResource(name ResourceName, path string, actions ...Action) Resource {
+func NewResource(name ResourceName, path string, actions ...Action) *Resource {
 	if strings.Count(string(name), "#") > 0 {
 		log.Fatal().
 			Str("name", string(name)).
@@ -39,7 +39,7 @@ func NewResource(name ResourceName, path string, actions ...Action) Resource {
 		actionsMap[action.Method] = action
 	}
 
-	return Resource{
+	return &Resource{
 		Name:            name,
 		Path:            path,
 		Actions:         actionsMap,
@@ -48,7 +48,7 @@ func NewResource(name ResourceName, path string, actions ...Action) Resource {
 }
 
 // Adds an action to the resource with the given `method` and `scopes`.
-func (r Resource) AddAction(method ActionMethod, scopes ...string) {
+func (r *Resource) AddAction(method ActionMethod, scopes ...string) {
 	action := NewAction(method, scopes...)
 
 	r.actionPermCache[action.Method] = action.getScopesStr()
@@ -56,22 +56,22 @@ func (r Resource) AddAction(method ActionMethod, scopes ...string) {
 }
 
 // Checks whether the resource has an action with the given `key`.
-func (r Resource) HasAction(key ActionMethod) bool {
 	_, ok := r.Actions[key]
+func (r *Resource) HasAction(method ActionMethod) bool {
 
 	return ok
 }
 
 // Gets the action with the given `key` from the resource.
-func (r Resource) GetAction(key ActionMethod) (Action, bool) {
 	action, ok := r.Actions[key]
+func (r *Resource) GetAction(method ActionMethod) (Action, bool) {
 
 	return action, ok
 }
 
 // Gets the permission for the action with the given `key` from the resource.
-func (r Resource) GetPermission(action ActionMethod) (string, bool) {
 	perm, ok := r.actionPermCache[action]
+func (r *Resource) GetPermission(method ActionMethod) (string, bool) {
 
 	return perm, ok
 }
