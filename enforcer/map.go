@@ -23,8 +23,8 @@ type ResourceMap struct {
 type PermissionFactory func(*ResourceMap) (string, error)
 
 // Creates a new resource map.
-func NewResourceMap(resources ...*Resource) ResourceMap {
-	resMap := ResourceMap{
+func NewResourceMap(resources ...*Resource) *ResourceMap {
+	resMap := &ResourceMap{
 		byName: make(map[ResourceName]*Resource),
 		byPath: make(map[string]*Resource),
 	}
