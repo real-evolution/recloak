@@ -2,10 +2,22 @@ package enforcer
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 
 	"github.com/real-evolution/recloak"
+)
+
+// ErrUnsupportedConfigType is returned when the config file has an unsupported
+// extension.
+var ErrUnsupportedConfigType = errors.New(
+	"unsupported config type (only .json and .yaml are supported",
 )
 
 type PolicyEnforcer interface {
@@ -25,13 +37,32 @@ type RecloakPolicyEnforcer struct {
 }
 
 // NewRecloakPolicyEnforcer creates a new RecloakPolicyEnforcer.
-func NewRecloakPolicyEnforcer(
+func NewPolicyEnforcer(
 	client *recloak.Client,
 	resMap *ResourceMap,
-) *RecloakPolicyEnforcer {
+) PolicyEnforcer {
 	return &RecloakPolicyEnforcer{
 		client: client,
 		resMap: resMap,
+	}
+}
+
+// NewFilePolicyEnforcer creates a new PolicyEnforcer from a config file.
+func NewFilePolicyEnforcer(
+	client *recloak.Client,
+	configPath string,
+) (PolicyEnforcer, error) {
+	cfgExt := strings.ToLower(filepath.Ext(configPath))
+
+	switch cfgExt {
+	case ".json":
+		return getPolicyEnforcerFromClient(configPath, client, json.Unmarshal)
+
+	case ".yaml", ".yml":
+		return getPolicyEnforcerFromClient(configPath, client, yaml.Unmarshal)
+
+	default:
+		return nil, ErrUnsupportedConfigType
 	}
 }
 
@@ -52,4 +83,22 @@ func (e *RecloakPolicyEnforcer) CheckAccess(
 	}
 
 	return e.client.CheckAccess(ctx, token, perms...)
+}
+
+func getPolicyEnforcerFromClient(
+	path string,
+	client *recloak.Client,
+	de func([]byte, interface{}) error,
+) (PolicyEnforcer, error) {
+	authzConfig, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	resMap := new(ResourceMap)
+	if err := de(authzConfig, resMap); err != nil {
+		return nil, err
+	}
+
+	return NewPolicyEnforcer(client, resMap), nil
 }
