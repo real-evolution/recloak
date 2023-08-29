@@ -109,35 +109,20 @@ func getAccessTokenFrom(ctx context.Context) (string, error) {
 func splitFullMethod(
 	fullMethod string,
 ) (string, e.ActionMethod) {
-	// we need to split it to package, service and method
+	const SLASH = 0x2F
 
-	// check for empty method
-	if len(fullMethod) == 0 {
-		log.Fatal().Msg("empty method was passed to interceptor")
-	}
-
-	var cleanMethod string
-
-	// remove leading slash
-	if fullMethod[0] == '/' {
-		cleanMethod = fullMethod[1:]
-	} else {
-		cleanMethod = fullMethod
-	}
-
-	parts := strings.Split(cleanMethod, "/")
+	lastSlashIdx := strings.LastIndexByte(fullMethod, SLASH)
 
 	// check for invalid format
-	if len(parts) != 2 {
-		log.Fatal().
+	if lastSlashIdx == -1 || lastSlashIdx == len(fullMethod)-1 {
+		log.Panic().
 			Str("fullMethod", fullMethod).
-			Str("cleanMethod", cleanMethod).
-			Strs("parts", parts).
+			Int("lastSlashIdx", lastSlashIdx).
 			Msg("invalid method format")
 	}
 
-	service := parts[0]
-	method := parts[1]
+	path := fullMethod[:lastSlashIdx]
+	method := fullMethod[lastSlashIdx+1:]
 
-	return service, e.ActionMethod(method)
+	return path, e.ActionMethod(method)
 }
