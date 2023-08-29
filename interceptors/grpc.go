@@ -21,9 +21,7 @@ type AuthInterceptor struct {
 
 // NewAuthInterceptor creates a new AuthInterceptor with the given PolicyEnforcer.
 func NewAuthInterceptor(enforcer e.PolicyEnforcer) AuthInterceptor {
-	return AuthInterceptor{
-		enforcer: enforcer,
-	}
+	return AuthInterceptor{enforcer}
 }
 
 // Unary returns a new unary server interceptors that performs authorization
@@ -77,9 +75,8 @@ func (i *AuthInterceptor) authorize(
 			Err(err).
 			Str("path", path).
 			Str("action", string(action)).
-			Msg("access to resource denied")
-
-		return status.Error(codes.PermissionDenied, "insufficient permissions")
+			Msg("access to resource was denied")
+		return status.Error(codes.PermissionDenied, "access denied")
 	}
 
 	return nil
@@ -91,19 +88,19 @@ func getAccessTokenFrom(ctx context.Context) (string, error) {
 	// get metadata from context
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return "", status.Errorf(codes.Unauthenticated, "missing request metadata")
+		return "", status.Error(codes.Unauthenticated, "missing request metadata")
 	}
 
 	// get authorization header
 	values := md["authorization"]
 	if len(values) == 0 {
-		return "", status.Errorf(codes.Unauthenticated, "missing access token")
+		return "", status.Error(codes.Unauthenticated, "missing access token")
 	}
 
 	// validate access token format
 	token := values[0]
 	if len(token) < 7 || strings.ToLower(token[:7]) != "bearer " {
-		return "", status.Errorf(codes.Unauthenticated, "invalid access token")
+		return "", status.Error(codes.Unauthenticated, "invalid access token")
 	}
 
 	return token[7:], nil
@@ -112,7 +109,6 @@ func getAccessTokenFrom(ctx context.Context) (string, error) {
 func splitFullMethod(
 	fullMethod string,
 ) (string, e.ActionMethod) {
-	// fullMethod is in format "/package.service/method"
 	// we need to split it to package, service and method
 
 	// check for empty method
