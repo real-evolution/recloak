@@ -39,19 +39,18 @@ func (c *Client) Introspect(
 //     exist (first time) or is expired.
 func (c *Client) Refresh(ctx context.Context, force bool) error {
 	if c.token != nil {
-		if !force {
-			if !isTimestampExpired(int64(c.token.ExpiresIn)) {
-				log.Debug().
-					Str("clientId", c.clientID).
-					Msg("access token is not expired, skipping refresh")
 
-				return nil
-			} else {
-				log.Debug().
-					Str("clientId", c.clientID).
-					Msg("access token is expired, refreshing using refresh token")
-			}
+		if !isTimestampExpired(int64(c.token.ExpiresIn)) && !force {
+			log.Debug().
+				Str("clientId", c.clientID).
+				Msg("access token is not expired, skipping refresh")
+
+			return nil
 		}
+
+		log.Debug().
+			Str("clientId", c.clientID).
+			Msg("access token is expired, refreshing using refresh token")
 
 		if !isTimestampExpired(int64(c.token.RefreshExpiresIn)) {
 			log.Debug().
