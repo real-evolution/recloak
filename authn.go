@@ -21,6 +21,10 @@ func (c *Client) Introspect(
 	ctx context.Context,
 	token string,
 ) (*gocloak.IntroSpectTokenResult, error) {
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
 	return c.inner.RetrospectToken(
 		ctx,
 		token,
