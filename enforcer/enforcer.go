@@ -20,18 +20,8 @@ var ErrUnsupportedConfigType = errors.New(
 	"unsupported config type (only .json and .yaml are supported",
 )
 
-type PolicyEnforcer interface {
-	// CheckAccess checks whether the given `token` can access the resource
-	// defined by the given `permFactories`.
-	CheckAccess(
-		ctx context.Context,
-		token *string,
-		permFactories ...PermissionFactory,
-	) error
-}
-
 // RecloakPolicyEnforcer is a PolicyEnforcer that uses Recloak as its backend.
-type RecloakPolicyEnforcer struct {
+type PolicyEnforcer struct {
 	client *recloak.Client
 	resMap *ResourceMap
 }
@@ -40,8 +30,8 @@ type RecloakPolicyEnforcer struct {
 func NewPolicyEnforcer(
 	client *recloak.Client,
 	resMap *ResourceMap,
-) PolicyEnforcer {
-	return &RecloakPolicyEnforcer{
+) *PolicyEnforcer {
+	return &PolicyEnforcer{
 		client: client,
 		resMap: resMap,
 	}
@@ -51,7 +41,7 @@ func NewPolicyEnforcer(
 func NewFilePolicyEnforcer(
 	client *recloak.Client,
 	configPath string,
-) (PolicyEnforcer, error) {
+) (*PolicyEnforcer, error) {
 	cfgExt := strings.ToLower(filepath.Ext(configPath))
 
 	switch cfgExt {
@@ -68,7 +58,7 @@ func NewFilePolicyEnforcer(
 
 // CheckResourceAccess checks whether the given `token` can access the resource
 // defined by the given `permFactories`.
-func (e *RecloakPolicyEnforcer) CheckAccess(
+func (e *PolicyEnforcer) CheckAccess(
 	ctx context.Context,
 	token *string,
 	permFactories ...PermissionFactory,
@@ -89,7 +79,7 @@ func getPolicyEnforcerFromClient(
 	path string,
 	client *recloak.Client,
 	de func([]byte, interface{}) error,
-) (PolicyEnforcer, error) {
+) (*PolicyEnforcer, error) {
 	authzConfig, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
