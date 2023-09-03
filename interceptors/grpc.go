@@ -16,11 +16,11 @@ import (
 
 // AuthInterceptor is a gRPC server interceptor that performs authorization
 type AuthInterceptor struct {
-	enforcer e.PolicyEnforcer
+	enforcer *e.PolicyEnforcer
 }
 
 // NewAuthInterceptor creates a new AuthInterceptor with the given PolicyEnforcer.
-func NewAuthInterceptor(enforcer e.PolicyEnforcer) AuthInterceptor {
+func NewAuthInterceptor(enforcer *e.PolicyEnforcer) AuthInterceptor {
 	return AuthInterceptor{enforcer}
 }
 
