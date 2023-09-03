@@ -75,6 +75,16 @@ func (e *PolicyEnforcer) CheckAccess(
 	return e.client.CheckAccess(ctx, token, perms...)
 }
 
+// Client returns the Recloak client used by this PolicyEnforcer.
+func (e *PolicyEnforcer) Client() *recloak.Client {
+	return e.client
+}
+
+// ResourceMap returns the ResourceMap used by this PolicyEnforcer.
+func (e *PolicyEnforcer) ResourceMap() *ResourceMap {
+	return e.resMap
+}
+
 func getPolicyEnforcerFromClient(
 	path string,
 	client *recloak.Client,
