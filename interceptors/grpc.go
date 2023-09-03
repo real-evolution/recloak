@@ -87,9 +87,8 @@ func (i *AuthInterceptor) authorize(
 	if err != nil {
 		log.Warn().
 			Err(err).
-			Str("token", authHeader).
 			Str("fullMethod", fullMethod).
-			Msg("Unauthenticated request")
+			Msg("could not decode access token")
 
 		return nil, status.Error(codes.Unauthenticated, "invalid access token")
 	}
