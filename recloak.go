@@ -33,6 +33,7 @@ func NewClient(keycloakURL, realm, clientID, clientSecret string) *Client {
 	}
 }
 
+// Decode the given `accessToken` and return the resulting token.
 func (c *Client) DecodeAccessToken(
 	ctx context.Context,
 	accessToken string,
@@ -43,4 +44,16 @@ func (c *Client) DecodeAccessToken(
 		c.realm,
 		&jwt.RegisteredClaims{},
 	)
+}
+
+// Gets a user by identifier from the keycloak server.
+func (c *Client) GetUserByID(
+	ctx context.Context,
+	userID string,
+) (*gocloak.User, error) {
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
+	return c.inner.GetUserByID(ctx, c.token.AccessToken, c.realm, userID)
 }
