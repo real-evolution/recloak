@@ -1,8 +1,11 @@
 package recloak
 
 import (
+	"context"
+
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/eko/gocache/lib/v4/cache"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // A type wrapping `gocloak` client to provide a more convenient API.
@@ -28,4 +31,16 @@ func NewClient(keycloakURL, realm, clientID, clientSecret string) *Client {
 		clientSecret: clientSecret,
 		token:        nil,
 	}
+}
+
+func (c *Client) DecodeAccessToken(
+	ctx context.Context,
+	accessToken string,
+) (*jwt.Token, error) {
+	return c.inner.DecodeAccessTokenCustomClaims(
+		ctx,
+		accessToken,
+		c.realm,
+		&jwt.RegisteredClaims{},
+	)
 }
