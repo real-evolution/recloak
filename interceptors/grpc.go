@@ -9,10 +9,25 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rs/zerolog/log"
 
 	e "github.com/real-evolution/recloak/enforcer"
 )
+
+// ContextKey is the type used to store values in the context.
+type ContextKey string
+
+const (
+	// AuthTokenKey is the key used to store the JWT token in the context.
+	AuthTokenKey ContextKey = "authToken"
+)
+
+// AuthToken is a wrapper around `jwt.Token` and `jwt.RegisteredClaims`.
+type AuthToken struct {
+	Token  *jwt.Token
+	Claims *jwt.RegisteredClaims
+}
 
 // AuthInterceptor is a gRPC server interceptor that performs authorization
 type AuthInterceptor struct {
@@ -32,8 +47,8 @@ func (i AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		if err := i.authorize(ctx, info.FullMethod); err != nil {
+	) (ret interface{}, err error) {
+		if ctx, err = i.authorize(ctx, info.FullMethod); err != nil {
 			return nil, err
 		}
 
@@ -50,41 +65,55 @@ func (i AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		if err := i.authorize(stream.Context(), info.FullMethod); err != nil {
+		ctx, err := i.authorize(stream.Context(), info.FullMethod)
+		if err != nil {
 			return err
 		}
 
-		return handler(srv, stream)
+		return handler(srv, &WrappedServerStream{stream, ctx})
 	}
 }
 
 func (i *AuthInterceptor) authorize(
 	ctx context.Context,
 	fullMethod string,
-) error {
-	token, err := getAccessTokenFrom(ctx)
+) (context.Context, error) {
+	authHeader, err := getAuthorizationHeaderFrom(ctx)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	token, err := i.enforcer.Client().DecodeAccessToken(ctx, authHeader)
+	if err != nil {
+		log.Warn().
+			Err(err).
+			Str("token", authHeader).
+			Str("fullMethod", fullMethod).
+			Msg("Unauthenticated request")
+
+		return nil, status.Error(codes.Unauthenticated, "invalid access token")
+	}
+
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	if !ok {
+		log.Panic().Msg("invalid token claims")
 	}
 
 	path, action := splitFullMethod(fullMethod)
-	err = i.enforcer.CheckAccess(ctx, &token, e.ByPath(path, action))
-
-	if err != nil {
+	if err := i.enforcer.CheckAccess(ctx, &token.Raw, e.ByPath(path, action)); err != nil {
 		log.Warn().
 			Err(err).
 			Str("path", path).
 			Str("action", string(action)).
 			Msg("access to resource was denied")
-		return status.Error(codes.PermissionDenied, "access denied")
+
+		return nil, status.Error(codes.PermissionDenied, "access denied")
 	}
 
-	return nil
+	return context.WithValue(ctx, AuthTokenKey, AuthToken{token, claims}), nil
 }
 
-func getAccessTokenFrom(ctx context.Context) (string, error) {
-	const tokenPrefix = "bearer "
-
+func getAuthorizationHeaderFrom(ctx context.Context) (string, error) {
 	// get metadata from context
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -94,16 +123,10 @@ func getAccessTokenFrom(ctx context.Context) (string, error) {
 	// get authorization header
 	values := md["authorization"]
 	if len(values) == 0 {
-		return "", status.Error(codes.Unauthenticated, "missing access token")
+		return "", status.Error(codes.Unauthenticated, "missing authorization header")
 	}
 
-	// validate access token format
-	token := values[0]
-	if len(token) < 7 || strings.ToLower(token[:7]) != "bearer " {
-		return "", status.Error(codes.Unauthenticated, "invalid access token")
-	}
-
-	return token[7:], nil
+	return values[0], nil
 }
 
 func splitFullMethod(
