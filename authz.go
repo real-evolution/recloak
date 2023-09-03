@@ -55,26 +55,26 @@ func (c *Client) CheckAccess(
 }
 
 // Checks whether the user with the given `userID` has all of the given `roles`.
-func (c *Client) HasAllRoles(
+func (c *Client) HasAllClientRoles(
 	ctx context.Context,
 	userID string,
-	roles ...string,
+	requiredRoles ...string,
 ) (bool, error) {
-	user, err := c.GetUserByID(ctx, userID)
+	actualRoles, err := c.GetUserClientRoles(ctx, userID)
 	if err != nil {
 		return false, err
 	}
 
-	if user.RealmRoles == nil || len(*user.RealmRoles) < len(roles) {
+	if actualRoles == nil || len(actualRoles) < len(requiredRoles) {
 		return false, nil
 	}
 
-	exists := make(map[string]bool, len(roles))
-	for _, role := range roles {
-		exists[role] = true
+	exists := make(map[string]bool, len(actualRoles))
+	for _, role := range actualRoles {
+		exists[*role.ID] = true
 	}
 
-	for _, role := range *user.RealmRoles {
+	for _, role := range requiredRoles {
 		if !exists[role] {
 			return false, nil
 		}
@@ -84,23 +84,23 @@ func (c *Client) HasAllRoles(
 }
 
 // Checks whether the user with the given `userID` has any of the given `roles`.
-func (c *Client) HasAnyRole(
+func (c *Client) HasAnyClientRole(
 	ctx context.Context,
 	userID string,
-	roles ...string,
+	requiredRoles ...string,
 ) (bool, error) {
-	user, err := c.GetUserByID(ctx, userID)
+	actualRoles, err := c.GetUserClientRoles(ctx, userID)
 	if err != nil {
 		return false, err
 	}
 
-	if user.RealmRoles == nil {
+	if actualRoles == nil {
 		return false, nil
 	}
 
-	for _, requiredRole := range roles {
-		for _, actualRole := range *user.RealmRoles {
-			if requiredRole == actualRole {
+	for _, requiredRole := range requiredRoles {
+		for _, actualRole := range actualRoles {
+			if requiredRole == *actualRole.ID {
 				return true, nil
 			}
 		}
