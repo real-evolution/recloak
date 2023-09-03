@@ -53,3 +53,58 @@ func (c *Client) CheckAccess(
 
 	return nil
 }
+
+// Checks whether the user with the given `userID` has all of the given `roles`.
+func (c *Client) HasAllRoles(
+	ctx context.Context,
+	userID string,
+	roles ...string,
+) (bool, error) {
+	user, err := c.GetUserByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+
+	if user.RealmRoles == nil || len(*user.RealmRoles) < len(roles) {
+		return false, nil
+	}
+
+	exists := make(map[string]bool, len(roles))
+	for _, role := range roles {
+		exists[role] = true
+	}
+
+	for _, role := range *user.RealmRoles {
+		if !exists[role] {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+// Checks whether the user with the given `userID` has any of the given `roles`.
+func (c *Client) HasAnyRole(
+	ctx context.Context,
+	userID string,
+	roles ...string,
+) (bool, error) {
+	user, err := c.GetUserByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+
+	if user.RealmRoles == nil {
+		return false, nil
+	}
+
+	for _, requiredRole := range roles {
+		for _, actualRole := range *user.RealmRoles {
+			if requiredRole == actualRole {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
