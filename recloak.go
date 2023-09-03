@@ -6,6 +6,7 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // A type wrapping `gocloak` client to provide a more convenient API.
@@ -56,4 +57,24 @@ func (c *Client) GetUserByID(
 	}
 
 	return c.inner.GetUserByID(ctx, c.token.AccessToken, c.realm, userID)
+}
+
+// Gets client roles for the given `userID`.
+func (c *Client) GetUserClientRoles(
+	ctx context.Context,
+	userID string,
+) ([]*gocloak.Role, error) {
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("clietId", c.clientID).Msg("getting client roles")
+
+	return c.inner.GetClientRolesByUserID(
+		ctx,
+		c.token.AccessToken,
+		c.realm,
+		c.clientID,
+		userID,
+	)
 }
