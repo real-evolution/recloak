@@ -4,30 +4,14 @@ import (
 	"context"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/rs/zerolog/log"
-
 	e "github.com/real-evolution/recloak/enforcer"
 )
-
-// ContextKey is the type used to store values in the context.
-type ContextKey string
-
-const (
-	// AuthTokenKey is the key used to store the JWT token in the context.
-	AuthTokenKey ContextKey = "authToken"
-)
-
-// AuthToken is a wrapper around `jwt.Token` and `jwt.RegisteredClaims`.
-type AuthToken struct {
-	Token  *jwt.Token
-	Claims *jwt.RegisteredClaims
-}
 
 // AuthInterceptor is a gRPC server interceptor that performs authorization
 type AuthInterceptor struct {
@@ -93,23 +77,17 @@ func (i *AuthInterceptor) authorize(
 		return nil, status.Error(codes.Unauthenticated, "invalid access token")
 	}
 
-	claims, ok := token.Claims.(*jwt.RegisteredClaims)
-	if !ok {
-		log.Panic().Msg("invalid token claims")
-	}
-
-	path, action := splitFullMethod(fullMethod)
-	if err := i.enforcer.CheckAccess(ctx, &token.Raw, e.ByPath(path, action)); err != nil {
+	err = i.enforcer.CheckAccess(ctx, &token.Token.Raw, getByPathPerm(fullMethod))
+	if err != nil {
 		log.Warn().
 			Err(err).
-			Str("path", path).
-			Str("action", string(action)).
+			Str("fullMethod", fullMethod).
 			Msg("access to resource was denied")
 
 		return nil, status.Error(codes.PermissionDenied, "access denied")
 	}
 
-	return context.WithValue(ctx, AuthTokenKey, AuthToken{token, claims}), nil
+	return token.WrapContext(ctx), nil
 }
 
 func getAuthorizationHeaderFrom(ctx context.Context) (string, error) {
@@ -128,9 +106,7 @@ func getAuthorizationHeaderFrom(ctx context.Context) (string, error) {
 	return values[0], nil
 }
 
-func splitFullMethod(
-	fullMethod string,
-) (string, e.ActionMethod) {
+func getByPathPerm(fullMethod string) e.PermissionFactory {
 	const SLASH = 0x2F
 
 	lastSlashIdx := strings.LastIndexByte(fullMethod, SLASH)
@@ -146,5 +122,5 @@ func splitFullMethod(
 	path := fullMethod[:lastSlashIdx]
 	method := fullMethod[lastSlashIdx+1:]
 
-	return path, e.ActionMethod(method)
+	return e.ByPath(path, e.ActionMethod(method))
 }
