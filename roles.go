@@ -19,6 +19,10 @@ func (c *Client) GetClientRolesByName(
 	accessToken string,
 	roleNames ...string,
 ) (Roles, error) {
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
 	log.Debug().
 		Strs("roles", roleNames).
 		Msg("getting client roles by name")
@@ -49,6 +53,10 @@ func (c *Client) GetClientRolesByUserID(
 	accessToken string,
 	userID string,
 ) (Roles, error) {
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
 	log.Debug().
 		Str("userId", userID).
 		Msg("getting client roles by user id")
