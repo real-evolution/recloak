@@ -16,3 +16,40 @@ func isTimestampExpired(timestamp int64) bool {
 
 	return exp.After(now)
 }
+
+// Checks whether an array contains all of the given items.
+func arrayContainsAll(array, required []string) bool {
+	if len(array) < len(required) {
+		return false
+	}
+
+	for _, item := range required {
+		if !arrayContains(array, item) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Checks whether an array contains any of the given items.
+func arrayContainsAny(array, required []string) bool {
+	for _, item := range required {
+		if arrayContains(array, item) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Checks whether an array contains the given item.
+func arrayContains(array []string, required string) bool {
+	for _, item := range array {
+		if item == required {
+			return true
+		}
+	}
+
+	return false
+}
