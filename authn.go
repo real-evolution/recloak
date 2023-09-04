@@ -13,7 +13,7 @@ func (c *Client) Login(
 	ctx context.Context,
 	username, password string,
 ) (*gocloak.JWT, error) {
-	return c.inner.Login(ctx, c.clientID, c.clientSecret, c.realm, username, password)
+	return c.inner.Login(ctx, c.ClientID, c.clientSecret, c.Realm, username, password)
 }
 
 // Introspects the given `token` and returns the introspection result.
@@ -28,9 +28,9 @@ func (c *Client) Introspect(
 	return c.inner.RetrospectToken(
 		ctx,
 		token,
-		c.clientID,
+		c.ClientID,
 		c.clientSecret,
-		c.realm,
+		c.Realm,
 	)
 }
 
@@ -48,41 +48,41 @@ func (c *Client) Refresh(ctx context.Context, force bool) error {
 		}
 
 		log.Debug().
-			Str("clientId", c.clientID).
+			Str("clientId", c.ClientID).
 			Msg("access token is expired, refreshing using refresh token")
 
 		if !isTimestampExpired(int64(c.token.RefreshExpiresIn)) {
 			log.Debug().
-				Str("clientId", c.clientID).
+				Str("clientId", c.ClientID).
 				Bool("force", force).
 				Msg("refrshing access token")
 
 			token, err := c.inner.RefreshToken(
 				ctx,
 				c.token.RefreshToken,
-				c.clientID,
+				c.ClientID,
 				c.clientSecret,
-				c.realm,
+				c.Realm,
 			)
 			if err != nil {
 				return err
 			}
 
 			c.token = token
-			return err
+			return nil
 		}
 
 		log.Debug().
-			Str("clientId", c.clientID).
+			Str("clientId", c.ClientID).
 			Bool("force", force).
 			Msg("refresh token is expired, logging in")
 	}
 
 	log.Info().
-		Str("clientId", c.clientID).
+		Str("clientId", c.ClientID).
 		Msg("logging in to keycloak to acquire a new token pair")
 
-	token, err := c.inner.LoginClient(ctx, c.clientID, c.clientSecret, c.realm)
+	token, err := c.inner.LoginClient(ctx, c.ClientID, c.clientSecret, c.Realm)
 	if err != nil {
 		return err
 	}
