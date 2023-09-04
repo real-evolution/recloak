@@ -19,9 +19,9 @@ type Client struct {
 	clientSecret  string // the secret of the client
 
 	permsCache *cache.Cache[*gocloak.RequestingPartyPermission]
-	token      *gocloak.JWT         // current client token state
-	clientRepr *gocloak.Client      // the client representation
-	rolesCache map[string]*AuthRole // cache of roles by name
+	token      *gocloak.JWT     // current client token state
+	clientRepr *gocloak.Client  // the client representation
+	rolesCache map[string]*Role // cache of roles by name
 }
 
 // Create a new `Client` with the given `basePath`.
@@ -55,7 +55,7 @@ func (c *Client) GetClientRolesByUserID(
 	ctx context.Context,
 	accessToken string,
 	userID string,
-) (AuthRoles, error) {
+) (Roles, error) {
 	log.Debug().
 		Str("userId", userID).
 		Msg("getting client roles by user id")
@@ -73,7 +73,7 @@ func (c *Client) GetClientRolesByUserID(
 
 	c.cacheRoles(roles...)
 
-	return AuthRoles(roles), err
+	return Roles(roles), err
 }
 
 // Gets client roles for the given `userID`.
@@ -139,12 +139,12 @@ func (c *Client) GetClientRolesByName(
 	ctx context.Context,
 	accessToken string,
 	roleNames ...string,
-) (AuthRoles, error) {
+) (Roles, error) {
 	log.Debug().
 		Strs("roles", roleNames).
 		Msg("getting client roles by name")
 
-	roles := make([]*AuthRole, len(roleNames))
+	roles := make([]*Role, len(roleNames))
 
 	for i, name := range roleNames {
 		if role, ok := c.rolesCache[name]; ok {
@@ -165,9 +165,9 @@ func (c *Client) GetClientRolesByName(
 }
 
 // Cache the given `roles` localy.
-func (c *Client) cacheRoles(roles ...*AuthRole) {
+func (c *Client) cacheRoles(roles ...*Role) {
 	if c.rolesCache == nil {
-		c.rolesCache = make(map[string]*AuthRole, len(roles))
+		c.rolesCache = make(map[string]*Role, len(roles))
 	}
 
 	for _, role := range roles {
