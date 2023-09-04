@@ -50,59 +50,6 @@ func (c *Client) GetUserByID(
 	return c.inner.GetUserByID(ctx, c.token.AccessToken, c.Realm, userID)
 }
 
-// Gets client roles for the given `userID`.
-func (c *Client) GetClientRolesByUserID(
-	ctx context.Context,
-	accessToken string,
-	userID string,
-) (Roles, error) {
-	log.Debug().
-		Str("userId", userID).
-		Msg("getting client roles by user id")
-
-	roles, err := c.inner.GetClientRolesByUserID(
-		ctx,
-		accessToken,
-		c.Realm,
-		c.IDOfClient,
-		userID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	c.cacheRoles(roles...)
-
-	return Roles(roles), err
-}
-
-// Gets client roles for the given `userID`.
-func (c *Client) AddClientRolesToUser(
-	ctx context.Context,
-	accessToken string,
-	userID string,
-	roleNames ...string,
-) error {
-	log.Info().
-		Str("userId", userID).
-		Strs("roles", roleNames).
-		Msg("adding client roles to user")
-
-	roles, err := c.GetClientRolesByName(ctx, accessToken, roleNames...)
-	if err != nil {
-		return err
-	}
-
-	return c.inner.AddClientRolesToUser(
-		ctx,
-		accessToken,
-		c.Realm,
-		c.IDOfClient,
-		userID,
-		roles.Owned(),
-	)
-}
-
 func (c *Client) GetRepresentation(
 	ctx context.Context,
 	forceUpdate bool,
@@ -132,45 +79,4 @@ func (c *Client) GetRepresentation(
 	c.clientRepr = client
 
 	return client, nil
-}
-
-// Gets the roles corresponding to the given `names`.
-func (c *Client) GetClientRolesByName(
-	ctx context.Context,
-	accessToken string,
-	roleNames ...string,
-) (Roles, error) {
-	log.Debug().
-		Strs("roles", roleNames).
-		Msg("getting client roles by name")
-
-	roles := make([]*Role, len(roleNames))
-
-	for i, name := range roleNames {
-		if role, ok := c.rolesCache[name]; ok {
-			roles[i] = role
-		} else {
-			role, err := c.inner.GetClientRole(ctx, accessToken, c.Realm, c.IDOfClient, name)
-			if err != nil {
-				return nil, err
-			}
-
-			c.rolesCache[name] = role
-
-			roles[i] = role
-		}
-	}
-
-	return roles, nil
-}
-
-// Cache the given `roles` localy.
-func (c *Client) cacheRoles(roles ...*Role) {
-	if c.rolesCache == nil {
-		c.rolesCache = make(map[string]*Role, len(roles))
-	}
-
-	for _, role := range roles {
-		c.rolesCache[*role.Name] = role
-	}
 }
