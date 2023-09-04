@@ -13,11 +13,11 @@ import (
 type Client struct {
 	inner        *gocloak.GoCloak // wrapped gocloak client
 	keycloakURL  string           // URL of the keycloak server
-	realm        string           // the id of the realm keycloak realm
-	clientID     string           // the id of the client
 	clientSecret string           // the secret of the client
 	token        *gocloak.JWT     // current client token state
 	permsCache   *cache.Cache[*gocloak.RequestingPartyPermission]
+	Realm         string // the id of the realm keycloak realm
+	ClientID      string // the human-readable id of the client
 }
 
 // Create a new `Client` with the given `basePath`.

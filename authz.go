@@ -26,17 +26,17 @@ func (c *Client) CheckAccess(
 	}
 
 	log.Debug().
-		Str("clientId", c.clientID).
+		Str("clientId", c.ClientID).
 		Strs("permissions", permissions).
 		Msg("checking access")
 
 	result, err := c.inner.GetRequestingPartyPermissionDecision(
 		ctx,
 		c.token.AccessToken,
-		c.realm,
+		c.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			GrantType:   &umaTicketGrantType,
-			Audience:    &c.clientID,
+			Audience:    &c.ClientID,
 			RPT:         rpt,
 			Permissions: &permissions,
 		},
@@ -47,7 +47,7 @@ func (c *Client) CheckAccess(
 
 	if !*result.Result {
 		log.Panic().
-			Str("clientId", c.clientID).
+			Str("clientId", c.ClientID).
 			Msg("invalid server response (got false)")
 	}
 
