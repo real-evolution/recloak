@@ -1,6 +1,13 @@
 package recloak
 
-import "time"
+import (
+	"time"
+
+	"github.com/Nerzal/gocloak/v13"
+)
+
+// A re-export of `gocloak.APIError` for convenience.
+type APIError = gocloak.APIError
 
 // Checks whether the given timestamp is expired (in the past) or not.
 func isTimestampExpired(timestamp int64) bool {
