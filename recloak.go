@@ -50,25 +50,27 @@ func (c *Client) GetUserByID(
 	return c.inner.GetUserByID(ctx, c.token.AccessToken, c.Realm, userID)
 }
 
+// Gets client representation from the keycloak server.
 func (c *Client) GetRepresentation(
 	ctx context.Context,
+	accessToken string,
 	forceUpdate bool,
 ) (*gocloak.Client, error) {
-	if c.clientRepr != nil && !forceUpdate {
-		return c.clientRepr, nil
+	if err := c.RefreshIfExpired(ctx); err != nil {
+		return nil, err
 	}
 
 	log.Debug().
 		Bool("forceUpdate", forceUpdate).
 		Msg("getting client representation")
 
-	if err := c.RefreshIfExpired(ctx); err != nil {
-		return nil, err
+	if c.clientRepr != nil && !forceUpdate {
+		return c.clientRepr, nil
 	}
 
 	client, err := c.inner.GetClientRepresentation(
 		ctx,
-		c.token.AccessToken,
+		accessToken,
 		c.Realm,
 		c.ClientID,
 	)
