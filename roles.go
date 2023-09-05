@@ -19,21 +19,21 @@ func (c *Client) GetClientRolesByName(
 	accessToken string,
 	roleNames ...string,
 ) (Roles, error) {
-	if err := c.RefreshIfExpired(ctx); err != nil {
-		return nil, err
-	}
-
 	log.Debug().
 		Strs("roles", roleNames).
 		Msg("getting client roles by name")
 
-	roles := make([]*Role, len(roleNames))
+	repr, err := c.GetRepresentation(ctx, accessToken, false)
+	if err != nil {
+		return nil, err
+	}
 
+	roles := make([]*Role, len(roleNames))
 	for i, name := range roleNames {
 		if role, ok := c.rolesCache[name]; ok {
 			roles[i] = role
 		} else {
-			role, err := c.inner.GetClientRole(ctx, accessToken, c.Realm, c.IDOfClient, name)
+			role, err := c.inner.GetClientRole(ctx, accessToken, c.Realm, *repr.ID, name)
 			if err != nil {
 				return nil, err
 			}
@@ -53,19 +53,20 @@ func (c *Client) GetClientRolesByUserID(
 	accessToken string,
 	userID string,
 ) (Roles, error) {
-	if err := c.RefreshIfExpired(ctx); err != nil {
-		return nil, err
-	}
-
 	log.Debug().
 		Str("userId", userID).
 		Msg("getting client roles by user id")
+
+	repr, err := c.GetRepresentation(ctx, accessToken, false)
+	if err != nil {
+		return nil, err
+	}
 
 	roles, err := c.inner.GetClientRolesByUserID(
 		ctx,
 		accessToken,
 		c.Realm,
-		c.IDOfClient,
+		*repr.ID,
 		userID,
 	)
 	if err != nil {
@@ -89,6 +90,11 @@ func (c *Client) AddClientRolesToUser(
 		Strs("roles", roleNames).
 		Msg("adding client roles to user")
 
+	repr, err := c.GetRepresentation(ctx, accessToken, false)
+	if err != nil {
+		return err
+	}
+
 	roles, err := c.GetClientRolesByName(ctx, accessToken, roleNames...)
 	if err != nil {
 		return err
@@ -98,7 +104,7 @@ func (c *Client) AddClientRolesToUser(
 		ctx,
 		accessToken,
 		c.Realm,
-		c.IDOfClient,
+		*repr.ID,
 		userID,
 		roles.Owned(),
 	)

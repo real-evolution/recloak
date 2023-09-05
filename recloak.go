@@ -14,7 +14,6 @@ type Client struct {
 
 	AuthServerURL string // URL of the keycloak server
 	Realm         string // the id of the realm keycloak realm
-	IDOfClient    string // the internal id of the client
 	ClientID      string // the human-readable id of the client
 	clientSecret  string // the secret of the client
 
@@ -25,14 +24,13 @@ type Client struct {
 }
 
 // Create a new `Client` with the given `basePath`.
-func NewClient(keycloakURL, realm, idOfClient, clientID, clientSecret string) *Client {
+func NewClient(keycloakURL, realm, clientID, clientSecret string) *Client {
 	inner := gocloak.NewClient(keycloakURL)
 
 	return &Client{
 		inner:         inner,
 		AuthServerURL: keycloakURL,
 		Realm:         realm,
-		IDOfClient:    idOfClient,
 		ClientID:      clientID,
 		clientSecret:  clientSecret,
 	}
