@@ -110,6 +110,38 @@ func (c *Client) AddClientRolesToUser(
 	)
 }
 
+// Deletes client roles for the user with the given `userID`.
+func (c *Client) DeleteClientRolesFromUser(
+	ctx context.Context,
+	accessToken string,
+	userID string,
+	roleNames ...string,
+) error {
+	log.Info().
+		Str("userId", userID).
+		Strs("roles", roleNames).
+		Msg("removing client roles from user")
+
+	repr, err := c.GetRepresentation(ctx, accessToken, false)
+	if err != nil {
+		return err
+	}
+
+	roles, err := c.GetClientRolesByName(ctx, accessToken, roleNames...)
+	if err != nil {
+		return err
+	}
+
+	return c.inner.DeleteClientRolesFromUser(
+		ctx,
+		accessToken,
+		c.Realm,
+		*repr.ID,
+		userID,
+		roles.Owned(),
+	)
+}
+
 // Checks whether the token has the given realm `role`.
 func (r Roles) Contains(role string) bool {
 	return r.Get(role) != nil
