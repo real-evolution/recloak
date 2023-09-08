@@ -9,9 +9,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
+	// "google.golang.org/protobuf/reflect/protoreflect"
+
+	"github.com/real-evolution/recloak"
 	e "github.com/real-evolution/recloak/enforcer"
 )
+
+var ErrPermissionDenied = status.Error(codes.PermissionDenied, "access denied")
 
 // AuthInterceptor is a gRPC server interceptor that performs authorization
 type AuthInterceptor struct {
@@ -32,7 +39,7 @@ func (i AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (ret interface{}, err error) {
-		if ctx, err = i.authorize(ctx, info.FullMethod); err != nil {
+		if ctx, err = i.authorize(ctx, info.FullMethod, req); err != nil {
 			return nil, err
 		}
 
@@ -49,7 +56,7 @@ func (i AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		ctx, err := i.authorize(stream.Context(), info.FullMethod)
+		ctx, err := i.authorize(stream.Context(), info.FullMethod, nil)
 		if err != nil {
 			return err
 		}
@@ -61,6 +68,7 @@ func (i AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 func (i *AuthInterceptor) authorize(
 	ctx context.Context,
 	fullMethod string,
+	req interface{},
 ) (context.Context, error) {
 	authHeader, err := getAuthorizationHeaderFrom(ctx)
 	if err != nil {
@@ -77,14 +85,33 @@ func (i *AuthInterceptor) authorize(
 		return nil, status.Error(codes.Unauthenticated, "invalid access token")
 	}
 
-	err = i.enforcer.CheckAccess(ctx, &token.Token.Raw, getByPathPerm(fullMethod))
+	actions, err := i.enforcer.ResourceMap().GetActions(getByPathPerm(fullMethod))
 	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("could not generate permission strings, check your map definitions")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	opts := recloak.CheckAccessParams{
+		AccessToken: &token.Token.Raw,
+		Permissions: make([]string, 0),
+		Claims:      make(map[string]interface{}),
+	}
+
+	for _, action := range actions {
+		opts.Permissions = append(opts.Permissions, action.Permission)
+		emitActionClaims(action, req, &opts.Claims)
+	}
+
+	if err := i.enforcer.Client().CheckAccess(ctx, opts); err != nil {
 		log.Warn().
 			Err(err).
 			Str("fullMethod", fullMethod).
 			Msg("access to resource was denied")
 
-		return nil, status.Error(codes.PermissionDenied, "access denied")
+		return nil, ErrPermissionDenied
 	}
 
 	return token.WrapContext(ctx), nil
@@ -106,7 +133,7 @@ func getAuthorizationHeaderFrom(ctx context.Context) (string, error) {
 	return values[0], nil
 }
 
-func getByPathPerm(fullMethod string) e.PermissionFactory {
+func getByPathPerm(fullMethod string) e.ActionSelector {
 	const SLASH = 0x2F
 
 	lastSlashIdx := strings.LastIndexByte(fullMethod, SLASH)
@@ -123,4 +150,58 @@ func getByPathPerm(fullMethod string) e.PermissionFactory {
 	method := fullMethod[lastSlashIdx+1:]
 
 	return e.ByPath(path, e.ActionMethod(method))
+}
+
+// Gets the permission string of the action.
+func emitActionClaims(action e.Action, input any, out *map[string]any) {
+	if len(action.Claims) == 0 {
+		return
+	}
+
+	inputMsg, ok := input.(proto.Message)
+	if !ok {
+		log.Error().
+			Str("action", string(action.Method)).
+			Msg("invalid or nil input for action claims")
+
+		return
+	}
+
+	refInputMsg := inputMsg.ProtoReflect()
+	inputFields := refInputMsg.Descriptor().Fields()
+
+	for _, claim := range action.Claims {
+		switch claim.Source {
+		case e.ResourceClaimResourceRequest:
+			field := inputFields.ByName(protoreflect.Name(claim.Name))
+
+			if field == nil {
+				log.Error().
+					Str("action", string(action.Method)).
+					Str("claimName", string(claim.Name)).
+					Msg("action claim requested but not found, setting to nil")
+
+				(*out)[string(claim.Name)] = nil
+				continue
+			}
+
+			var fieldKey string
+			if claim.Alias != "" {
+				fieldKey = string(claim.Alias)
+			} else {
+				fieldKey = string(claim.Name)
+			}
+
+			fieldVal := refInputMsg.Get(field)
+
+			if field.IsList() {
+				(*out)[fieldKey] = fieldVal.Interface()
+			} else {
+				claims := make([]any, 1)
+				claims[0] = fieldVal.Interface()
+
+				(*out)[fieldKey] = claims
+			}
+		}
+	}
 }
