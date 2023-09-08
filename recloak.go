@@ -33,6 +33,7 @@ func NewClient(keycloakURL, realm, clientID, clientSecret string) *Client {
 		Realm:         realm,
 		ClientID:      clientID,
 		clientSecret:  clientSecret,
+		rolesCache:    make(map[string]*Role),
 	}
 }
 

@@ -73,7 +73,9 @@ func (c *Client) GetClientRolesByUserID(
 		return nil, err
 	}
 
-	c.cacheRoles(roles...)
+	for _, role := range roles {
+		c.rolesCache[*role.Name] = role
+	}
 
 	return Roles(roles), err
 }
@@ -207,15 +209,4 @@ func (r Roles) Owned() []Role {
 	}
 
 	return owned
-}
-
-// Cache the given `roles` localy.
-func (c *Client) cacheRoles(roles ...*Role) {
-	if c.rolesCache == nil {
-		c.rolesCache = make(map[string]*Role, len(roles))
-	}
-
-	for _, role := range roles {
-		c.rolesCache[*role.Name] = role
-	}
 }
