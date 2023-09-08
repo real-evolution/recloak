@@ -15,11 +15,15 @@ var (
 	includeResourceName = true
 )
 
+type CheckAccessParams struct {
+	AccessToken *string
+	Permissions []string
+}
+
 // Checks whether the given `token` can is granted the given `permissions`.
 func (c *Client) CheckAccess(
 	ctx context.Context,
-	rpt *string,
-	permissions ...string,
+	params CheckAccessParams,
 ) error {
 	if err := c.RefreshIfExpired(ctx); err != nil {
 		return err
@@ -27,19 +31,19 @@ func (c *Client) CheckAccess(
 
 	log.Debug().
 		Str("clientId", c.ClientID).
-		Strs("permissions", permissions).
+		Strs("permissions", params.Permissions).
 		Msg("checking access")
 
+	opts := gocloak.RequestingPartyTokenOptions{
+		GrantType:   &umaTicketGrantType,
+		Audience:    &c.ClientID,
+		Permissions: &params.Permissions,
+	}
 	result, err := c.inner.GetRequestingPartyPermissionDecision(
 		ctx,
 		c.token.AccessToken,
 		c.Realm,
-		gocloak.RequestingPartyTokenOptions{
-			GrantType:   &umaTicketGrantType,
-			Audience:    &c.ClientID,
-			RPT:         rpt,
-			Permissions: &permissions,
-		},
+		opts,
 	)
 	if err != nil {
 		return err
