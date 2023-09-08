@@ -1,14 +1,12 @@
 package enforcer
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 
 	"github.com/real-evolution/recloak"
@@ -54,25 +52,6 @@ func NewFilePolicyEnforcer(
 	default:
 		return nil, ErrUnsupportedConfigType
 	}
-}
-
-// CheckResourceAccess checks whether the given `token` can access the resource
-// defined by the given `permFactories`.
-func (e *PolicyEnforcer) CheckAccess(
-	ctx context.Context,
-	token *string,
-	permFactories ...PermissionFactory,
-) error {
-	perms, err := e.resMap.GetPermissions(permFactories...)
-	if err != nil {
-		log.Warn().
-			Err(err).
-			Msg("could not generate permission strings, check your map definitions")
-
-		return err
-	}
-
-	return e.client.CheckAccess(ctx, token, perms...)
 }
 
 // Client returns the Recloak client used by this PolicyEnforcer.
