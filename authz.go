@@ -61,7 +61,7 @@ func (c *Client) CheckAccess(
 
 	result, err := c.inner.GetRequestingPartyPermissionDecision(
 		ctx,
-		c.token.AccessToken,
+		*params.AccessToken,
 		c.Realm,
 		opts,
 	)
