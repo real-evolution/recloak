@@ -67,21 +67,6 @@ func (r *Resource) GetAction(method ActionMethod) (Action, bool) {
 	return action, ok
 }
 
-// Gets the permission for the action with the given `key` from the resource.
-func (r *Resource) GetPermission(method ActionMethod) (string, bool) {
-	perm, isCached := r.actionPermCache[method]
-
-	if !isCached {
-		if action, hasAction := r.Actions[method]; hasAction {
-			scopesStr := action.getScopesStr()
-			permStr := fmt.Sprintf("%s#%s", r.Name, scopesStr)
-
-			r.actionPermCache[method] = permStr
-			return permStr, true
-		}
-	}
-
-	return perm, isCached
 }
 
 func (r *Resource) UnmarshalJSON(data []byte) error {
