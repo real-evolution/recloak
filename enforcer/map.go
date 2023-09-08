@@ -19,9 +19,8 @@ type ResourceMap struct {
 	byPath map[string]*Resource
 }
 
-// PermissionFactory is a function that can generate a permission string from
-// a resource.
-type PermissionFactory func(*ResourceMap) (string, error)
+// ActionSelector is a function that can selects an action from a resource.
+type ActionSelector func(*ResourceMap) (Action, error)
 
 // Creates a new resource map.
 func NewResourceMap(resources ...*Resource) *ResourceMap {
@@ -65,60 +64,54 @@ func (rm *ResourceMap) GetResourceByPath(path string) *Resource {
 	return rm.byPath[path]
 }
 
-// Translate a list of permission factories into a list of permission strings.
-func (rm *ResourceMap) GetPermissions(
-	permFactories ...PermissionFactory,
-) ([]string, error) {
-	perms := make([]string, len(permFactories))
+// Translate a list of action selectos into a list of actions.
+func (rm *ResourceMap) GetActions(
+	selectors ...ActionSelector,
+) ([]Action, error) {
+	actions := make([]Action, len(selectors))
 
-	for i, permFactory := range permFactories {
-		perm, err := permFactory(rm)
+	for i, permFactory := range selectors {
+		action, err := permFactory(rm)
 		if err != nil {
 			return nil, err
 		}
 
-		perms[i] = perm
+		actions[i] = action
 	}
 
-	return perms, nil
+	return actions, nil
 }
 
 func (rm *ResourceMap) getPermissionOfAction(
 	resSelector func(*ResourceMap) *Resource,
 	action ActionMethod,
-) (string, error) {
+) (Action, error) {
 	if res := resSelector(rm); res != nil {
-		perm, ok := res.GetPermission(action)
-
-		if ok {
+		if perm, ok := res.GetAction(action); ok {
 			return perm, nil
-		} else {
-			return "", ErrorUndefinedAction
 		}
-	} else {
-		return "", ErrUndefinedResource
+
+		return Action{}, ErrorUndefinedAction
 	}
+
+	return Action{}, ErrUndefinedResource
 }
 
-// Gets the permission for the action with the given `key` from the resource
-func ByName(name ResourceName, action ActionMethod) PermissionFactory {
-	return func(rm *ResourceMap) (string, error) {
+// Gets action with the given `key` from the resource
+func ByName(name ResourceName, action ActionMethod) ActionSelector {
+	return func(rm *ResourceMap) (Action, error) {
 		return rm.getPermissionOfAction(func(rm *ResourceMap) *Resource {
 			return rm.GetResourceByName(name)
-		},
-			action,
-		)
+		}, action)
 	}
 }
 
-// Gets the permission for the action with the given `key` from the resource
-func ByPath(path string, action ActionMethod) PermissionFactory {
-	return func(rm *ResourceMap) (string, error) {
+// Gets action with the given `key` from the resource
+func ByPath(path string, action ActionMethod) ActionSelector {
+	return func(rm *ResourceMap) (Action, error) {
 		return rm.getPermissionOfAction(func(rm *ResourceMap) *Resource {
 			return rm.GetResourceByPath(path)
-		},
-			action,
-		)
+		}, action)
 	}
 }
 
