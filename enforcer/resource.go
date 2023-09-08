@@ -53,13 +53,6 @@ func NewResource(
 	}
 }
 
-// Adds an action to the resource with the given `method` and `scopes`.
-func (r *Resource) AddAction(method ActionMethod, scopes ...string) {
-	action := NewAction(method, scopes...)
-
-	r.Actions[action.Method] = action
-}
-
 // Checks whether the resource has an action with the given `key`.
 func (r *Resource) HasAction(method ActionMethod) bool {
 	_, ok := r.Actions[method]
