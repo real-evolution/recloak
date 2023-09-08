@@ -67,15 +67,14 @@ func (r *Resource) GetAction(method ActionMethod) (Action, bool) {
 	return action, ok
 }
 
+type resourceModel struct {
+	Name    ResourceName `json:"name"    yaml:"name"`
+	Path    string       `json:"path"    yaml:"path"`
+	Actions []Action     `json:"actions" yaml:"actions,flow"`
 }
 
 func (r *Resource) UnmarshalJSON(data []byte) error {
-	model := struct {
-		Name    ResourceName `json:"name"`
-		Path    string       `json:"path"`
-		Actions []Action     `json:"actions"`
-	}{}
-
+	model := resourceModel{}
 	if err := json.Unmarshal(data, &model); err != nil {
 		return err
 	}
@@ -86,11 +85,7 @@ func (r *Resource) UnmarshalJSON(data []byte) error {
 }
 
 func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
-	model := struct {
-		Name    ResourceName `yaml:"name"`
-		Path    string       `yaml:"path"`
-		Actions []Action     `yaml:"actions,flow"`
-	}{}
+	model := resourceModel{}
 
 	if err := value.Decode(&model); err != nil {
 		return err
