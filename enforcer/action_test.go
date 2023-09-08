@@ -8,7 +8,7 @@ import (
 
 // TestHasScope tests whether `HasScope` works as expected.
 func TestHasScope(t *testing.T) {
-	a := NewAction("", "a", "b", "c")
+	a := NewAction("", []string{"a", "b", "c"}, nil)
 
 	require.True(t, a.HasScope("a"))
 	require.True(t, a.HasScope("b"))
@@ -18,7 +18,7 @@ func TestHasScope(t *testing.T) {
 
 // TestActionHasAllScopes tests whether `HasAllScopes` works as expected.
 func TestHasAllScopes(t *testing.T) {
-	a := NewAction("", "a", "b", "c")
+	a := NewAction("", []string{"a", "b", "c"}, nil)
 
 	require.True(t, a.HasAllScopes("a", "b", "c"))
 	require.True(t, !a.HasAllScopes("a", "b", "c", "d"))
@@ -26,7 +26,7 @@ func TestHasAllScopes(t *testing.T) {
 
 // TestActionHasAnyScope tests whether `HasAnyScope` works as expected.
 func TestHasAnyScope(t *testing.T) {
-	a := NewAction("", "a", "b", "c")
+	a := NewAction("", []string{"a", "b", "c"}, nil)
 
 	require.True(t, a.HasAnyScope("a", "b", "c"))
 	require.True(t, a.HasAnyScope("a", "b", "c", "d"))
@@ -35,7 +35,7 @@ func TestHasAnyScope(t *testing.T) {
 
 // TestActionHasScope tests whether `getScopesStr` returns the correct string.
 func TestScopesStr(t *testing.T) {
-	a := NewAction("", "a", "b", "c")
+	a := NewAction("", []string{"a", "b", "c"}, nil)
 
 	require.Equal(t, "a,b,c", a.getScopesStr())
 }
