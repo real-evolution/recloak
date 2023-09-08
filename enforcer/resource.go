@@ -19,14 +19,17 @@ type (
 
 // Resource is a resource that can be accessed using a set of actions.
 type Resource struct {
-	Name            ResourceName
-	Path            string
-	Actions         map[ActionMethod]Action
-	actionPermCache map[ActionMethod]string
+	Name    ResourceName
+	Path    string
+	Actions map[ActionMethod]Action
 }
 
 // Creates a new resource with the given `key`.
-func NewResource(name ResourceName, path string, actions ...Action) *Resource {
+func NewResource(
+	name ResourceName,
+	path string,
+	actions ...Action,
+) *Resource {
 	if strings.Count(string(name), "#") > 0 {
 		log.Panic().
 			Str("name", string(name)).
@@ -36,14 +39,17 @@ func NewResource(name ResourceName, path string, actions ...Action) *Resource {
 
 	actionMap := make(map[ActionMethod]Action)
 	for _, action := range actions {
+		scopesStr := action.getScopesStr()
+		permStr := fmt.Sprintf("%s#%s", name, scopesStr)
+		action.Permission = permStr
+
 		actionMap[action.Method] = action
 	}
 
 	return &Resource{
-		Name:            name,
-		Path:            path,
-		Actions:         actionMap,
-		actionPermCache: make(map[ActionMethod]string),
+		Name:    name,
+		Path:    path,
+		Actions: actionMap,
 	}
 }
 
