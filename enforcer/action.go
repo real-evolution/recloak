@@ -4,6 +4,11 @@ import (
 	"strings"
 )
 
+type (
+	// ResourceClaimSource is a unique identifier for a resource claim source.
+	ResourceClaimSource string
+)
+
 const (
 	ResourceClaimResourceRequest ResourceClaimSource = "request"
 )
