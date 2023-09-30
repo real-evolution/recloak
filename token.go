@@ -2,6 +2,7 @@ package recloak
 
 import (
 	"context"
+	"log"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -18,6 +19,8 @@ const (
 // specific claims, namely `realm_access` and `resource_access`.
 type AuthClaims struct {
 	jwt.RegisteredClaims
+
+	PreferredUsername string `json:"preferred_username,omitempty"`
 
 	RealmAccess struct {
 		Roles []string `json:"roles,omitempty"`
