@@ -112,3 +112,12 @@ func NewAuthTokenFromContext(ctx context.Context) (AuthToken, bool) {
 
 	return token, ok
 }
+
+func EnsureTokenFromContext(ctx context.Context) AuthToken {
+	token, ok := NewAuthTokenFromContext(ctx)
+	if !ok {
+		log.Panic("no token found in context")
+	}
+
+	return token
+}
