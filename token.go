@@ -64,6 +64,11 @@ func (t AuthToken) HasRealmRole(role string) bool {
 	return arrayContains(t.Claims.RealmAccess.Roles, role)
 }
 
+// Checks whether the claims has the given realm `role`.
+func (c AuthClaims) HasRealmRole(role string) bool {
+	return arrayContains(c.RealmAccess.Roles, role)
+}
+
 // Checks whether the token has all of the given realm `roles`.
 func (t AuthToken) HasAllRealmRoles(roles ...string) bool {
 	return arrayContainsAll(t.Claims.RealmAccess.Roles, roles)
@@ -77,6 +82,15 @@ func (t AuthToken) HasAnyRealmRole(roles ...string) bool {
 // Checks whether the token has the given client `role`.
 func (t AuthToken) HasClientRole(client, role string) bool {
 	if clientRoles, ok := t.Claims.ResourceAccess[client]; ok {
+		return arrayContains(clientRoles.Roles, role)
+	}
+
+	return false
+}
+
+// Checks whether the token has the given client `role`.
+func (c AuthClaims) HasClientRole(client, role string) bool {
+	if clientRoles, ok := c.ResourceAccess[client]; ok {
 		return arrayContains(clientRoles.Roles, role)
 	}
 
