@@ -20,15 +20,15 @@ const (
 type AuthClaims struct {
 	jwt.RegisteredClaims
 
-	PreferredUsername string `json:"preferred_username,omitempty"`
+	PreferredUsername string `json:"preferred_username,omitempty" expr:"Username"`
 
 	RealmAccess struct {
-		Roles []string `json:"roles,omitempty"`
-	} `json:"realm_access,omitempty"`
+		Roles []string `json:"roles,omitempty" expr:"Roles"`
+	} `json:"realm_access,omitempty" expr:"Realm"`
 
 	ResourceAccess map[string]struct {
-		Roles []string `json:"roles,omitempty"`
-	} `json:"resource_access,omitempty"`
+		Roles []string `json:"roles,omitempty" expr:"Roles"`
+	} `json:"resource_access,omitempty" expr:"Clients"`
 }
 
 // AuthToken is a wrapper around `jwt.Token` and `jwt.RegisteredClaims`.
