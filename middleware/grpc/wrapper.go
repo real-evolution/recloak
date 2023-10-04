@@ -1,7 +1,7 @@
 // Copyright (c) The go-grpc-middleware Authors.
 // Licensed under the Apache License 2.0.
 
-package interceptors
+package grpc
 
 import (
 	"context"
@@ -26,5 +26,6 @@ func WrapServerStream(stream grpc.ServerStream) *WrappedServerStream {
 	if existing, ok := stream.(*WrappedServerStream); ok {
 		return existing
 	}
+
 	return &WrappedServerStream{ServerStream: stream, WrappedContext: stream.Context()}
 }
