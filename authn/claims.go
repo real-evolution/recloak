@@ -2,17 +2,10 @@ package authn
 
 import (
 	"context"
-	"log"
 	"slices"
 
 	"github.com/golang-jwt/jwt/v4"
 )
-
-// ClaimsContextKey is the key used to store the claims in the context
-type claimsContextKey struct{}
-
-// ClaimsContextKey is the key used to store the claims in the context
-var ClaimsContextKey = claimsContextKey{}
 
 // RolesClaim is a type that represents the roles claim of a JWT token
 type RolesClaim struct {
@@ -29,26 +22,20 @@ type Claims struct {
 	ResourceAcess     map[string]RolesClaim `json:"resource_access,omitempty"`
 }
 
-// WrapContext wraps the claims in the context.
-func (c *Claims) WrapContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, ClaimsContextKey, c)
-}
-
 // ClaimsFromContext extracts the claims from the context.
-func ClaimsFromContext(ctx context.Context) (*Claims, bool) {
-	claims, ok := ctx.Value(ClaimsContextKey).(*Claims)
-	return claims, ok
+func ClaimsFromContext(ctx context.Context) (*Claims, error) {
+	token, err := TokenFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Claims, nil
 }
 
 // EnsureClaimsFromContext extracts the claims from the context and panics if they are not found.
 func EnsureClaimsFromContext(ctx context.Context) *Claims {
-	claims, ok := ClaimsFromContext(ctx)
-
-	if !ok {
-		log.Panic("claims not found in context")
-	}
-
-	return claims
+	token := EnsureTokenFromContext(ctx)
+	return token.Claims
 }
 
 // InRealmRole checks if the user has the given role in the realm.

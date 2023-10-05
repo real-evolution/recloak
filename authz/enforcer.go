@@ -34,19 +34,19 @@ func (e *Enforcer) Authorize(
 	accessToken string,
 	path string,
 	request any,
-) (*authn.Claims, error) {
+) (authn.Token, error) {
 	if e.engine.config.EnforcementMode == EnforcementModeDisabled {
-		return nil, nil
+		return authn.Token{}, nil
 	}
 
 	if e.config.IntrospectionMode == IntrospectionModeAlways {
 		result, err := e.introspectToken(ctx, accessToken)
 		if err != nil {
-			return nil, err
+			return authn.Token{}, err
 		}
 
 		if result.Active == nil || !*result.Active {
-			return nil, ErrUnauthorized
+			return authn.Token{}, ErrUnauthorized
 		}
 	}
 
@@ -58,19 +58,22 @@ func (e *Enforcer) Authorize(
 		claims,
 	)
 	if err != nil {
-		return nil, err
+		return authn.Token{}, err
 	}
 
 	if !decodedToken.Valid {
-		return nil, ErrUnauthorized
+		return authn.Token{}, ErrUnauthorized
 	}
 
 	err = e.engine.Authorize(path, claims, request)
 	if err != nil {
-		return nil, err
+		return authn.Token{}, err
 	}
 
-	return claims, nil
+	return authn.Token{
+		Token:  decodedToken,
+		Claims: claims,
+	}, nil
 }
 
 // SetEnforcementMode sets the enforcement mode.

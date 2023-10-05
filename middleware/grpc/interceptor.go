@@ -85,10 +85,10 @@ func (i *Interceptor) doAuthorize(
 		return nil, err
 	}
 
-	claims, err := i.enforcer.Authorize(ctx, rawToken, fullMethod, req)
+	token, err := i.enforcer.Authorize(ctx, rawToken, fullMethod, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return claims.WrapContext(ctx), nil
+	return token.WrapContext(ctx), nil
 }
