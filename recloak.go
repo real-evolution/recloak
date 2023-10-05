@@ -13,13 +13,14 @@ type ReCloak struct {
 	client *gocloak.GoCloak
 	config *ClientConfig
 	token  *gocloak.JWT
+	repr   *gocloak.Client
 }
 
 // NewClient creates a new ReCloak instance
 func NewClient(config *ClientConfig) (*ReCloak, error) {
 	client := gocloak.NewClient(config.AuthServerURL)
 
-	return &ReCloak{client, config, nil}, nil
+	return &ReCloak{client, config, nil, nil}, nil
 }
 
 // Client returns the gocloak client
@@ -83,6 +84,36 @@ func (r *ReCloak) RefreshIfExpired(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Gets client representation from the keycloak server.
+func (r *ReCloak) GetRepresentation(ctx context.Context) (*gocloak.Client, error) {
+	token, err := TokenFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.repr != nil {
+		return r.repr, nil
+	}
+
+	if err = r.RefreshIfExpired(ctx); err != nil {
+		return nil, err
+	}
+
+	repr, err := r.client.GetClientRepresentation(
+		ctx,
+		token.Raw,
+		r.config.Realm,
+		r.config.ClientID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	r.repr = repr
+
+	return repr, nil
 }
 
 // Checks whether the given timestamp is expired (in the past) or not.
