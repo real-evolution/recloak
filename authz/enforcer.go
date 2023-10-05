@@ -80,6 +80,11 @@ func (e *Enforcer) SetEnforcementMode(mode EnforcementMode) {
 	e.config.EnforcementMode = mode
 }
 
+// Client returns the recloak client
+func (e *Enforcer) Client() *recloak.ReCloak {
+	return e.client
+}
+
 func (e *Enforcer) introspectToken(
 	ctx context.Context,
 	accessToken string,

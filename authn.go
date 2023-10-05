@@ -89,16 +89,6 @@ func TokenFromContext(ctx context.Context) (Token, error) {
 	return token, nil
 }
 
-// ClaimsFromContext extracts the claims from the context.
-func ClaimsFromContext(ctx context.Context) (*Claims, error) {
-	token, err := TokenFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return token.Claims, nil
-}
-
 // EnsureTokenFromContext returns a token from the context or panics
 func EnsureTokenFromContext(ctx context.Context) Token {
 	token, err := TokenFromContext(ctx)
@@ -109,8 +99,23 @@ func EnsureTokenFromContext(ctx context.Context) Token {
 	return token
 }
 
+// ClaimsFromContext extracts the claims from the context.
+func ClaimsFromContext(ctx context.Context) (*Claims, error) {
+	token, err := TokenFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Claims, nil
+}
+
+// EnsureClaimsFromContext extracts the claims from the context or panics.
+func EnsureClaimsFromContext(ctx context.Context) *Claims {
+	return EnsureTokenFromContext(ctx).Claims
+}
+
 // HasRole checks if the user has the given role.
-func (c *RolesClaim) HasRole(role string) bool {
+func (c RolesClaim) HasRole(role string) bool {
 	idx := slices.Index(c.Roles, role)
 
 	return idx != -1
