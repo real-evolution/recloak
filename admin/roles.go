@@ -2,11 +2,17 @@ package admin
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"github.com/Nerzal/gocloak/v13"
 
 	"github.com/real-evolution/recloak"
 )
+
+// ErrUserNotInRole is returned when an operation is attempted on a user that
+// is not in the role.
+var ErrUserNotInRole = errors.New("user is not in role")
 
 // Role is a wrapper around `gocloak.Role`, adding convenience methods.
 type Role = gocloak.Role
@@ -130,6 +136,11 @@ func (m *ClientRolesManager) RemoveRolesFromUser(
 
 	roles, err := m.GetRolesByName(ctx, roleNames...)
 	if err != nil {
+		var kcErr *gocloak.APIError
+		if errors.As(err, &kcErr) && kcErr.Code == http.StatusNotFound {
+			return ErrUserNotInRole
+		}
+
 		return err
 	}
 
@@ -141,6 +152,11 @@ func (m *ClientRolesManager) RemoveRolesFromUser(
 		userID,
 		roles.owned(),
 	)
+}
+
+// ContainsRole checks if the user has the given role in the client.
+func (m *ClientRolesManager) ContainsRole(claims *recloak.Claims, role string) bool {
+	return claims.ResourceAcess[m.client.Config().ClientID].HasRole(role)
 }
 
 func (m *ClientRolesManager) getTokenAndRepresentation(
