@@ -10,6 +10,9 @@ import (
 
 func TestEnvInRole(t *testing.T) {
 	env := AuthzEnv{
+		Config: &AuthzConfig{
+			ClientID: "client",
+		},
 		Claims: &authn.Claims{
 			RealmAcess: authn.RolesClaim{
 				Roles: []string{"admin"},
@@ -28,7 +31,7 @@ func TestEnvInRole(t *testing.T) {
 	})
 
 	t.Run("in client role", func(t *testing.T) {
-		err := evalPolicy(`InClientRole("client", "user")`, env)
+		err := evalPolicy(`InRole("user")`, env)
 		require.NoError(t, err)
 	})
 }

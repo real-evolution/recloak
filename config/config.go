@@ -43,5 +43,8 @@ func LoadConfig(path string) (*ReCloakConfig, error) {
 		return nil, err
 	}
 
+	// TODO: get a better way to do this
+	config.Authz.ClientID = config.Client.ClientID
+
 	return &config, nil
 }

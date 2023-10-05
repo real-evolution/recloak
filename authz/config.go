@@ -54,6 +54,9 @@ type AuthzConfig struct {
 	// Whether to introspect user token before evaluating policies.
 	IntrospectionMode IntrospectionMode `yaml:"introspection"`
 
+	// The ID of the client.
+	ClientID string `yaml:"clientID"`
+
 	// Authorization policies.
 	Policies []Policy `yaml:"policies,flow"`
 
