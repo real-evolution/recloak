@@ -43,6 +43,7 @@ func (e *Engine) Authorize(path string, claims *authn.Claims, request any) error
 
 	if policy, ok := e.compiledPolicies[path]; ok {
 		env := AuthzEnv{
+			Config:  e.config,
 			Claims:  claims,
 			Request: request,
 		}

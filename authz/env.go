@@ -7,6 +7,7 @@ import (
 // AuthzEnv is an environment that is passed to the policy expression during
 // evaluation.
 type AuthzEnv struct {
+	Config  *AuthzConfig
 	Claims  *authn.Claims
 	Request any
 }
@@ -17,6 +18,6 @@ func (e AuthzEnv) InRealmRole(role string) bool {
 }
 
 // InClientRole checks if the user has the given role for the given client.
-func (e AuthzEnv) InClientRole(client, role string) bool {
-	return e.Claims.InClientRole(client, role)
+func (e AuthzEnv) InRole(role string) bool {
+	return e.Claims.InClientRole(e.Config.ClientID, role)
 }
