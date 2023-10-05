@@ -7,13 +7,13 @@ require (
 	github.com/antonmedv/expr v1.15.3
 	github.com/rs/zerolog v1.30.0
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/go-faker/faker/v4 v4.2.0
-	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

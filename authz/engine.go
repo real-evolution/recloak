@@ -42,7 +42,12 @@ func (e *Engine) Authorize(path string, claims *authn.Claims, request any) error
 	}
 
 	if policy, ok := e.compiledPolicies[path]; ok {
-		return policy.Evaluate(claims, request)
+		env := AuthzEnv{
+			Claims:  claims,
+			Request: request,
+		}
+
+		return policy.Evaluate(env)
 	}
 
 	if e.config.EnforcementMode == EnforcementModeEnforcing {

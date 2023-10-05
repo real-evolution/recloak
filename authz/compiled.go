@@ -6,18 +6,9 @@ import (
 
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
-
-	"github.com/real-evolution/recloak/authn"
 )
 
 var ErrUnauthorized = fmt.Errorf("unauthorized")
-
-// PolicyEnv is an environment that is passed to the policy expression during
-// evaluation.
-type PolicyEnv struct {
-	Claims  *authn.Claims
-	Request any
-}
 
 // CompiledPolicy is a compiled policy that can be evaluated against a request
 // and a set of claims at runtime.
@@ -31,13 +22,26 @@ type PolicyCompiler struct {
 	currentExpr string
 }
 
-// Evaluate evaluates the policy against the given claims and request.
-func (p CompiledPolicy) Evaluate(claims *authn.Claims, request any) error {
-	env := PolicyEnv{
-		Claims:  claims,
-		Request: request,
+// CompilePolicy compiles the given policy from the given source expression.
+func CompilePolicy(source string) (CompiledPolicy, error) {
+	program, err := expr.Compile(
+		source,
+		expr.Env(AuthzEnv{}),
+		expr.Optimize(true),
+		expr.AsBool(),
+	)
+	if err != nil {
+		return CompiledPolicy{}, err
 	}
 
+	return CompiledPolicy{
+		source:  source,
+		program: program,
+	}, nil
+}
+
+// Evaluate evaluates the policy against the given claims and request.
+func (p CompiledPolicy) Evaluate(env AuthzEnv) error {
 	result, err := vm.Run(p.program, env)
 	if err != nil {
 		return err
@@ -97,18 +101,5 @@ func (b PolicyCompiler) And(exprs ...string) PolicyCompiler {
 
 // Compile builds a compiled policy from the current expression.
 func (b PolicyCompiler) Compile() (CompiledPolicy, error) {
-	program, err := expr.Compile(
-		b.currentExpr,
-		expr.Env(PolicyEnv{}),
-		expr.Optimize(true),
-		expr.AsBool(),
-	)
-	if err != nil {
-		return CompiledPolicy{}, err
-	}
-
-	return CompiledPolicy{
-		source:  b.currentExpr,
-		program: program,
-	}, nil
+	return CompilePolicy(b.currentExpr)
 }

@@ -44,10 +44,10 @@ func TestPolicyCompiler(t *testing.T) {
 	require.Equal(t, expectedExpr, compiledPol.source)
 	require.NotNil(t, compiledPol.program)
 
-	result := compiledPol.Evaluate(nil, testRequest)
+	result := compiledPol.Evaluate(AuthzEnv{nil, testRequest})
 	require.NoError(t, result)
 
 	testRequest.Foo = "not foo"
-	result = compiledPol.Evaluate(nil, testRequest)
+	result = compiledPol.Evaluate(AuthzEnv{nil, testRequest})
 	require.Error(t, result)
 }
