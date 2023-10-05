@@ -84,7 +84,7 @@ func parseEnforcementMode(modeStr string) (EnforcementMode, error) {
 // parseIntrospectionMode parses introspection mode from a string.
 func parseIntrospectionMode(modeStr string) (IntrospectionMode, error) {
 	switch strings.ToLower(modeStr) {
-	case "disabled":
+	case "never":
 		return IntrospectionModeDisabled, nil
 
 	case "always":
