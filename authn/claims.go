@@ -38,18 +38,6 @@ func EnsureClaimsFromContext(ctx context.Context) *Claims {
 	return token.Claims
 }
 
-// InRealmRole checks if the user has the given role in the realm.
-func (c *Claims) InRealmRole(role string) bool {
-	return c.RealmAcess.HasRole(role)
-}
-
-// InClientRole checks if the user has the given role for the given client.
-func (c *Claims) InClientRole(client, role string) bool {
-	clientRoles, ok := c.ResourceAcess[client]
-
-	return ok && clientRoles.HasRole(role)
-}
-
 // HasRole checks if the user has the given role.
 func (c *RolesClaim) HasRole(role string) bool {
 	idx := slices.Index(c.Roles, role)
