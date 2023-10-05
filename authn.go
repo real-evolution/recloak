@@ -1,13 +1,12 @@
-package authn
+package recloak
 
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rs/zerolog/log"
-
-	"github.com/real-evolution/recloak"
 )
 
 // tokenContextKey is a context key for the token
@@ -32,21 +31,35 @@ type Token struct {
 	Claims *Claims // Custom claims
 }
 
+// RolesClaim is a type that represents the roles claim of a JWT token
+type RolesClaim struct {
+	Roles []string `json:"roles"`
+}
+
+// Claims is a type that represents the claims of a JWT token
+type Claims struct {
+	jwt.RegisteredClaims
+
+	// Custom claims
+	PreferredUsername string                `json:"preferred_username"`
+	RealmAcess        RolesClaim            `json:"realm_access,omitempty"`
+	ResourceAcess     map[string]RolesClaim `json:"resource_access,omitempty"`
+}
+
 // DecodeAccessToken decodes a bearer access token and returns a Token instance
-func DecodeAccessToken(
+func (c *ReCloak) DecodeAccessToken(
 	ctx context.Context,
-	client *recloak.ReCloak,
 	tokenString string,
 ) (Token, error) {
-	if err := client.RefreshIfExpired(ctx); err != nil {
+	if err := c.RefreshIfExpired(ctx); err != nil {
 		return Token{}, err
 	}
 
 	claims := &Claims{}
-	token, err := client.Client().DecodeAccessTokenCustomClaims(
+	token, err := c.Client().DecodeAccessTokenCustomClaims(
 		ctx,
 		tokenString,
-		client.Config().Realm,
+		c.config.Realm,
 		claims,
 	)
 	if err != nil {
@@ -76,6 +89,16 @@ func TokenFromContext(ctx context.Context) (Token, error) {
 	return token, nil
 }
 
+// ClaimsFromContext extracts the claims from the context.
+func ClaimsFromContext(ctx context.Context) (*Claims, error) {
+	token, err := TokenFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Claims, nil
+}
+
 // EnsureTokenFromContext returns a token from the context or panics
 func EnsureTokenFromContext(ctx context.Context) Token {
 	token, err := TokenFromContext(ctx)
@@ -84,4 +107,11 @@ func EnsureTokenFromContext(ctx context.Context) Token {
 	}
 
 	return token
+}
+
+// HasRole checks if the user has the given role.
+func (c *RolesClaim) HasRole(role string) bool {
+	idx := slices.Index(c.Roles, role)
+
+	return idx != -1
 }

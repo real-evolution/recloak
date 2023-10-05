@@ -3,7 +3,7 @@ package authz
 import (
 	"fmt"
 
-	"github.com/real-evolution/recloak/authn"
+	"github.com/real-evolution/recloak"
 )
 
 var ErrorNoPolicyForPath = fmt.Errorf("no policy for path")
@@ -36,7 +36,7 @@ func NewEngine(config *AuthzConfig) (*Engine, error) {
 }
 
 // Authorize evaluates a policy for a path, with the given claims and request.
-func (e *Engine) Authorize(path string, claims *authn.Claims, request any) error {
+func (e *Engine) Authorize(path string, claims *recloak.Claims, request any) error {
 	if e.config.EnforcementMode == EnforcementModeDisabled {
 		return nil
 	}

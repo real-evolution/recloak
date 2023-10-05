@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/real-evolution/recloak/authn"
+	"github.com/real-evolution/recloak"
 )
 
 func TestEnvInRole(t *testing.T) {
@@ -13,11 +13,11 @@ func TestEnvInRole(t *testing.T) {
 		Config: &AuthzConfig{
 			ClientID: "client",
 		},
-		Claims: &authn.Claims{
-			RealmAcess: authn.RolesClaim{
+		Claims: &recloak.Claims{
+			RealmAcess: recloak.RolesClaim{
 				Roles: []string{"admin"},
 			},
-			ResourceAcess: map[string]authn.RolesClaim{
+			ResourceAcess: map[string]recloak.RolesClaim{
 				"client": {
 					Roles: []string{"user"},
 				},

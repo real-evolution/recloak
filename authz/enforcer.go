@@ -6,7 +6,6 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 
 	"github.com/real-evolution/recloak"
-	"github.com/real-evolution/recloak/authn"
 )
 
 type Enforcer struct {
@@ -34,23 +33,23 @@ func (e *Enforcer) Authorize(
 	accessToken string,
 	path string,
 	request any,
-) (authn.Token, error) {
+) (recloak.Token, error) {
 	if e.engine.config.EnforcementMode == EnforcementModeDisabled {
-		return authn.Token{}, nil
+		return recloak.Token{}, nil
 	}
 
 	if e.config.IntrospectionMode == IntrospectionModeAlways {
 		result, err := e.introspectToken(ctx, accessToken)
 		if err != nil {
-			return authn.Token{}, err
+			return recloak.Token{}, err
 		}
 
 		if result.Active == nil || !*result.Active {
-			return authn.Token{}, ErrUnauthorized
+			return recloak.Token{}, ErrUnauthorized
 		}
 	}
 
-	claims := &authn.Claims{}
+	claims := &recloak.Claims{}
 	decodedToken, err := e.client.Client().DecodeAccessTokenCustomClaims(
 		ctx,
 		accessToken,
@@ -58,19 +57,19 @@ func (e *Enforcer) Authorize(
 		claims,
 	)
 	if err != nil {
-		return authn.Token{}, err
+		return recloak.Token{}, err
 	}
 
 	if !decodedToken.Valid {
-		return authn.Token{}, ErrUnauthorized
+		return recloak.Token{}, ErrUnauthorized
 	}
 
 	err = e.engine.Authorize(path, claims, request)
 	if err != nil {
-		return authn.Token{}, err
+		return recloak.Token{}, err
 	}
 
-	return authn.Token{
+	return recloak.Token{
 		Token:  decodedToken,
 		Claims: claims,
 	}, nil

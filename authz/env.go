@@ -1,14 +1,14 @@
 package authz
 
 import (
-	"github.com/real-evolution/recloak/authn"
+	"github.com/real-evolution/recloak"
 )
 
 // AuthzEnv is an environment that is passed to the policy expression during
 // evaluation.
 type AuthzEnv struct {
 	Config  *AuthzConfig
-	Claims  *authn.Claims
+	Claims  *recloak.Claims
 	Request any
 }
 
