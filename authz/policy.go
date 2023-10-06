@@ -15,7 +15,7 @@ type Policy struct {
 	Description string `yaml:"description,omitempty"`
 
 	// The description of the policy.
-	Expression string `yaml:"expression,omitempty"`
+	Expression string `yaml:"expression"`
 }
 
 // PolicySpec is a struct that enables to specify a policy either in place or

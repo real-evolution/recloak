@@ -102,7 +102,11 @@ func (e *Engine) addResource(
 				return fmt.Errorf("policy %s not found", resource.Policy.Ref)
 			}
 		} else {
-			return fmt.Errorf("policy is empty")
+			return fmt.Errorf("policy specification of resource `%s` is empty", resource.Name)
+		}
+
+		if policy.Expression == "" {
+			return fmt.Errorf("policy `%s` expression is empty", policy.Name)
 		}
 
 		compiler = compiler.And(policy.Expression)
