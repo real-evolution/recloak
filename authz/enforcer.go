@@ -24,6 +24,7 @@ func NewEnforcer(client *recloak.ReCloak, config *AuthzConfig) (*Enforcer, error
 	return &Enforcer{
 		client: client,
 		engine: engine,
+		config: config,
 	}, nil
 }
 
