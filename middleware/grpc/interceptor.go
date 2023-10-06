@@ -5,6 +5,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/real-evolution/recloak/authz"
 )
@@ -77,17 +79,28 @@ func (i *Interceptor) doAuthorize(
 
 	header, err := extractAuthorizationHeader(ctx)
 	if err != nil {
-		return nil, err
+		log.Warn().
+			Err(err).
+			Msg("could not extract authorization header")
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 	}
 
 	rawToken, err := extractBearerToken(header)
 	if err != nil {
-		return nil, err
+		log.Warn().
+			Err(err).
+			Msg("invalid authorization header")
+		return nil, status.Error(codes.Unauthenticated, "invalid authorization header")
 	}
 
 	token, err := i.enforcer.Authorize(ctx, rawToken, fullMethod, req)
 	if err != nil {
-		return nil, err
+		log.Warn().
+			Err(err).
+			Str("fullMethod", fullMethod).
+			Msg("access to resource was denied")
+
+		return nil, status.Error(codes.PermissionDenied, "access denied")
 	}
 
 	return token.WrapContext(ctx), nil
