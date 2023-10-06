@@ -7,6 +7,9 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 )
 
+// A re-export of `gocloak.APIError` for convenience.
+type APIError = gocloak.APIError
+
 // ReCloak is a type that provides additional authorization capabilities
 // over `gocloak` library
 type ReCloak struct {
