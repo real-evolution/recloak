@@ -3,10 +3,15 @@ package authz
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"unicode"
 )
 
+// PolicyIncludePrefix is the prefix that indicates a policy include.
 const PolicyIncludePrefix = '@'
+
+var policyNamePattern = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 
 // PolicyMap is a set of policies.
 type PolicyMap struct {
@@ -41,6 +46,10 @@ func NewPolicyMap(config *AuthzConfig) (PolicyMap, error) {
 
 // Add adds a policy to the set.
 func (s *PolicyMap) Add(policy Policy) error {
+	if !policyNamePattern.MatchString(policy.Name) {
+		return fmt.Errorf("invalid policy name: %s", policy.Name)
+	}
+
 	if _, ok := s.policies[policy.Name]; ok {
 		return fmt.Errorf("duplicate policy name: %s", policy.Name)
 	}
@@ -145,9 +154,15 @@ func getIncludes(expr string) ([]string, error) {
 			j := i
 
 			for ; j < len(expr); j++ {
-				if expr[j] == ' ' {
+				if !unicode.IsLetter(rune(expr[j])) &&
+					!unicode.IsDigit(rune(expr[j])) &&
+					expr[j] != '_' {
 					break
 				}
+			}
+
+			if i == j {
+				return nil, errors.New("empty policy name")
 			}
 
 			refs = append(refs, expr[i:j])
