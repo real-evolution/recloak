@@ -63,10 +63,6 @@ func (e *Engine) SetEnforcementMode(mode EnforcementMode) {
 }
 
 func (e *Engine) fillFromResources() error {
-	if err := e.rawPolicies.resolveIncludes(); err != nil {
-		return err
-	}
-
 	for _, resource := range e.config.Resources {
 		if err := e.addResource(resource, "", PolicyCompiler{}); err != nil {
 			return err
@@ -111,6 +107,10 @@ func (e *Engine) addResource(
 
 		if policy.Expression == "" {
 			return fmt.Errorf("policy `%s` expression is empty", policy.Name)
+		}
+
+		if err := e.rawPolicies.Preprocess(&policy); err != nil {
+			return err
 		}
 
 		compiler = compiler.And(policy.Expression)

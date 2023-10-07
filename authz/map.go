@@ -3,7 +3,6 @@ package authz
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -11,15 +10,13 @@ const PolicyIncludePrefix = '@'
 
 // PolicyMap is a set of policies.
 type PolicyMap struct {
-	policies           map[string]Policy
-	unresolvedIncludes map[string][]string
+	policies map[string]Policy
 }
 
 // NewEmptyPolicyMap creates a new empty policy set.
 func NewEmptyPolicyMap() PolicyMap {
 	return PolicyMap{
-		policies:           make(map[string]Policy),
-		unresolvedIncludes: make(map[string][]string),
+		policies: make(map[string]Policy),
 	}
 }
 
@@ -48,16 +45,11 @@ func (s *PolicyMap) Add(policy Policy) error {
 		return fmt.Errorf("duplicate policy name: %s", policy.Name)
 	}
 
-	s.policies[policy.Name] = policy
-
-	includes, err := getIncludes(policy.Expression)
-	if err != nil {
+	if err := s.Preprocess(&policy); err != nil {
 		return err
 	}
 
-	if len(includes) > 0 {
-		s.unresolvedIncludes[policy.Name] = includes
-	}
+	s.policies[policy.Name] = policy
 
 	return nil
 }
@@ -95,29 +87,36 @@ func (p *PolicyMap) HasPolicy(name string) bool {
 	return ok
 }
 
-func (p *PolicyMap) resolveIncludes() error {
-	for name, incs := range p.unresolvedIncludes {
-		policy, ok := p.Get(name)
-		if !ok {
-			return fmt.Errorf("policy %s not found", name)
-		}
-
-		policyExpr := policy.Expression
-
-		for _, inc := range incs {
-			incPolicy, ok := p.Get(inc)
-			if !ok {
-				return fmt.Errorf("unresolved reference `%s` in %s", inc, name)
-			}
-
-			incExpr := fmt.Sprintf("(%s)", incPolicy.Expression)
-			incLabel := fmt.Sprintf("@%s", inc)
-			policyExpr = strings.ReplaceAll(policyExpr, incLabel, incExpr)
-		}
-
-		policy.Expression = policyExpr
-		p.policies[name] = policy
+func (p *PolicyMap) Preprocess(policy *Policy) error {
+	includes, err := getIncludes(policy.Expression)
+	if err != nil {
+		return err
 	}
+
+	ppExpr := policy.Expression
+
+	for _, includedName := range includes {
+		if includedName == policy.Name {
+			return fmt.Errorf("policy `%s` includes itself", policy.Name)
+		}
+
+		includedPolicy, ok := p.Get(includedName)
+		if !ok {
+			return fmt.Errorf(
+				"unresolved reference `%s` in %s",
+				includedName,
+				policy.Name,
+			)
+		}
+
+		ppExpr = strings.ReplaceAll(
+			ppExpr,
+			fmt.Sprintf("@%s", includedPolicy.Name),
+			fmt.Sprintf("(%s)", includedPolicy.Expression),
+		)
+	}
+
+	policy.Expression = ppExpr
 
 	return nil
 }
