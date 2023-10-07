@@ -103,3 +103,7 @@ func (b PolicyCompiler) And(exprs ...string) PolicyCompiler {
 func (b PolicyCompiler) Compile() (CompiledPolicy, error) {
 	return CompilePolicy(b.currentExpr)
 }
+
+func (b *PolicyCompiler) IsEmpty() bool {
+	return b.currentExpr == ""
+}

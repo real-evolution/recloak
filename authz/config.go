@@ -54,6 +54,9 @@ type AuthzConfig struct {
 	// Whether to introspect user token before evaluating policies.
 	IntrospectionMode IntrospectionMode `yaml:"introspection"`
 
+	// Whether to print debug information.
+	Debug bool `yaml:"debug"`
+
 	// The ID of the client.
 	ClientID string `yaml:"clientID"`
 

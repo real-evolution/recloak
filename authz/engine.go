@@ -3,6 +3,8 @@ package authz
 import (
 	"fmt"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/real-evolution/recloak"
 )
 
@@ -114,6 +116,16 @@ func (e *Engine) addResource(
 		}
 
 		compiler = compiler.And(policy.Expression)
+	}
+
+	if !compiler.IsEmpty() {
+		if e.config.Debug {
+			log.Debug().
+				Str("path", currentPath).
+				Str("expression", compiler.currentExpr).
+				Msg("adding policy")
+		}
+
 		compliledPolicy, err := compiler.Compile()
 		if err != nil {
 			return err
