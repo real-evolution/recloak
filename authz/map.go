@@ -1,38 +1,45 @@
 package authz
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"log"
+	"strings"
+)
+
+const PolicyIncludePrefix = '@'
 
 // PolicyMap is a set of policies.
 type PolicyMap struct {
-	policies map[string]Policy
+	policies           map[string]Policy
+	unresolvedIncludes map[string][]string
 }
 
 // NewEmptyPolicyMap creates a new empty policy set.
 func NewEmptyPolicyMap() PolicyMap {
 	return PolicyMap{
-		policies: make(map[string]Policy),
+		policies:           make(map[string]Policy),
+		unresolvedIncludes: make(map[string][]string),
 	}
 }
 
 // NewPolicyMap creates a new policy set.
 func NewPolicyMap(config *AuthzConfig) (PolicyMap, error) {
-	policySet := PolicyMap{
-		policies: make(map[string]Policy),
-	}
+	policyMap := NewEmptyPolicyMap()
 
 	for _, policy := range config.Policies {
-		if err := policySet.Add(policy); err != nil {
+		if err := policyMap.Add(policy); err != nil {
 			return PolicyMap{}, err
 		}
 	}
 
 	for _, resource := range config.Resources {
-		if err := policySet.AddFromResource(&resource); err != nil {
+		if err := policyMap.AddFromResource(&resource); err != nil {
 			return PolicyMap{}, err
 		}
 	}
 
-	return policySet, nil
+	return policyMap, nil
 }
 
 // Add adds a policy to the set.
@@ -42,6 +49,16 @@ func (s *PolicyMap) Add(policy Policy) error {
 	}
 
 	s.policies[policy.Name] = policy
+
+	includes, err := getIncludes(policy.Expression)
+	if err != nil {
+		return err
+	}
+
+	if len(includes) > 0 {
+		s.unresolvedIncludes[policy.Name] = includes
+	}
+
 	return nil
 }
 
@@ -76,4 +93,71 @@ func (p *PolicyMap) HasPolicy(name string) bool {
 	_, ok := p.policies[name]
 
 	return ok
+}
+
+func (p *PolicyMap) resolveIncludes() error {
+	for name, incs := range p.unresolvedIncludes {
+		policy, ok := p.Get(name)
+		if !ok {
+			return fmt.Errorf("policy %s not found", name)
+		}
+
+		policyExpr := policy.Expression
+
+		for _, inc := range incs {
+			incPolicy, ok := p.Get(inc)
+			if !ok {
+				return fmt.Errorf("unresolved reference `%s` in %s", inc, name)
+			}
+
+			incExpr := fmt.Sprintf("(%s)", incPolicy.Expression)
+			incLabel := fmt.Sprintf("@%s", inc)
+			policyExpr = strings.ReplaceAll(policyExpr, incLabel, incExpr)
+		}
+
+		policy.Expression = policyExpr
+		p.policies[name] = policy
+	}
+
+	return nil
+}
+
+func getIncludes(expr string) ([]string, error) {
+	refs := make([]string, 0)
+
+	inSingleQuote := false
+	inDoubleQuote := false
+
+	for i := 0; i < len(expr); i++ {
+		switch expr[i] {
+		case '\'':
+			inSingleQuote = !inSingleQuote
+
+		case '"':
+			inDoubleQuote = !inDoubleQuote
+		}
+
+		if inSingleQuote || inDoubleQuote {
+			continue
+		}
+
+		if expr[i] == PolicyIncludePrefix {
+			i += 1
+			j := i
+
+			for ; j < len(expr); j++ {
+				if expr[j] == ' ' {
+					break
+				}
+			}
+
+			refs = append(refs, expr[i:j])
+		}
+	}
+
+	if inSingleQuote || inDoubleQuote {
+		return nil, errors.New("unterminated quote")
+	}
+
+	return refs, nil
 }
