@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Nerzal/gocloak/v13"
+	"github.com/rs/zerolog/log"
 
 	"github.com/real-evolution/recloak"
 )
@@ -103,6 +104,11 @@ func (m *ClientRolesManager) AddRolesToUser(
 	userID string,
 	roleNames ...string,
 ) error {
+	log.Debug().
+		Str("user_id", userID).
+		Strs("roles", roleNames).
+		Msg("adding roles to user")
+
 	token, repr, err := m.getTokenAndRepresentation(ctx)
 	if err != nil {
 		return err
@@ -129,6 +135,11 @@ func (m *ClientRolesManager) RemoveRolesFromUser(
 	userID string,
 	roleNames ...string,
 ) error {
+	log.Debug().
+		Str("user_id", userID).
+		Strs("roles", roleNames).
+		Msg("removing roles from user")
+
 	token, repr, err := m.getTokenAndRepresentation(ctx)
 	if err != nil {
 		return err
