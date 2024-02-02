@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
 )
 
@@ -119,4 +119,28 @@ func (c RolesClaim) HasRole(role string) bool {
 	idx := slices.Index(c.Roles, role)
 
 	return idx != -1
+}
+
+func (c *Claims) GetExpirationTime() (*jwt.NumericDate, error) {
+  return c.ExpiresAt, nil
+}
+
+func (c *Claims) GetIssuedAt() (*jwt.NumericDate, error) {
+  return c.IssuedAt, nil
+}
+
+func (c *Claims) GetNotBefore() (*jwt.NumericDate, error) {
+  return c.NotBefore, nil
+}
+
+func (c *Claims) GetIssuer() (string, error) {
+  return c.Issuer, nil
+}
+
+func (c *Claims) GetSubject() (string, error) {
+  return c.Subject, nil
+}
+
+func (c *Claims) GetAudience() (jwt.ClaimStrings, error) {
+  return c.Audience, nil
 }
