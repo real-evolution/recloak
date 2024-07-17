@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/antonmedv/expr v1.15.3
-	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
