@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/vm"
+	"github.com/expr-lang/expr"
+	"github.com/expr-lang/expr/vm"
 )
 
 var ErrUnauthorized = fmt.Errorf("unauthorized")
