@@ -1,11 +1,8 @@
 package config
 
 import (
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -22,11 +19,6 @@ type ReCloakConfig struct {
 }
 
 func LoadConfig(path string) (*ReCloakConfig, error) {
-	fileExt := strings.ToLower(filepath.Ext(path))
-	if fileExt != ".yaml" && fileExt != ".yml" {
-		return nil, fmt.Errorf("unsupported file format: %s", fileExt)
-	}
-
 	configFile, err := os.Open(path)
 	if err != nil {
 		return nil, err
